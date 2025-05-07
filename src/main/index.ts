@@ -18,7 +18,7 @@ function createWindow() {
       contextIsolation: true,
       preload: join(__dirname, '../preload/index.js'),
     },
-    backgroundColor: '#ffffff',
+    // backgroundColor: '#ffffff',
     useContentSize: false, // 确保传入的尺寸是内容区域的尺寸
   })
   console.log(process.env['ELECTRON_RENDERER_URL'])

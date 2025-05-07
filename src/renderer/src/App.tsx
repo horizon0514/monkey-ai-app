@@ -1,15 +1,16 @@
-import Sidebar from '@renderer/components/Sidebar'
-
+import { Layout } from '@renderer/components/Layout';
+import { Sidebar } from '@renderer/components/Sidebar';
+import { MainContent } from '@renderer/components/MainContent';
 function App() {
   return (
-    <div className="app">
-      <Sidebar>
-        <div className="flex-1 p-4">
-          {/* 这里可以放置侧边栏的内容 */}
-        </div>
-      </Sidebar>
-    </div>
-  )
+    <Layout
+      sidebar={<Sidebar />}
+    >
+      <MainContent>
+        aaa
+      </MainContent>
+    </Layout>
+  );
 }
 
-export default App
+export default App;
