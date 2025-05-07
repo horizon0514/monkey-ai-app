@@ -12,6 +12,7 @@ function createWindow() {
     height: 800,
     ...(process.platform === 'linux' ? { icon } : {}),
     titleBarStyle: 'hidden',
+    trafficLightPosition: { x: 10, y: 15 },
     ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
     webPreferences: {
       nodeIntegration: false,
