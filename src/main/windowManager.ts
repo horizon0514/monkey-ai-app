@@ -3,45 +3,108 @@
  * Manages multiple side views that can be switched from a left panel
  */
 
-import { BrowserWindow, WebContentsView, WebPreferences } from 'electron'
-import { join } from 'path'
+import { BrowserWindow, BrowserView, WebPreferences } from 'electron'
 
 interface SideView {
   id: string
-  view: WebContentsView
+  view: BrowserView
   title: string
+  isLoaded: boolean
 }
 
 export class WindowManager {
   private mainWindow: BrowserWindow | null = null
   private sideViews: Map<string, SideView> = new Map()
   private currentViewId: string | null = null
+  private readonly TITLEBAR_HEIGHT = 38
+  private readonly RESIZE_HANDLE_WIDTH = 6
+  private sidebarWidth = 240
 
   constructor(mainWindow: BrowserWindow) {
     this.mainWindow = mainWindow
+
+    // 监听窗口大小变化
+    mainWindow.on('resize', () => {
+      this.updateViewBounds()
+    })
+  }
+
+  updateSidebarWidth(width: number) {
+    this.sidebarWidth = width
+    this.updateViewBounds()
   }
 
   createSideView(id: string, title: string, options?: { webPreferences?: WebPreferences }): SideView {
     if (!this.mainWindow) throw new Error('Main window not initialized')
 
-    // Create side view
-    const sideView = new WebContentsView({
+    // 如果视图已存在，直接返回
+    const existingView = this.sideViews.get(id)
+    if (existingView) {
+      return existingView
+    }
+
+    // 创建新的视图
+    const sideView = new BrowserView({
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
-        preload: join(__dirname, '../preload/index.js'),
         ...options?.webPreferences
       }
     })
 
+    // 设置背景色，与应用主题匹配
+    sideView.setBackgroundColor('#ffffff')
+
     const newView: SideView = {
       id,
       view: sideView,
-      title
+      title,
+      isLoaded: false
     }
 
     this.sideViews.set(id, newView)
+
+    // 加载对应的URL
+    const url = this.getUrlForId(id)
+    if (url) {
+      sideView.webContents.loadURL(url).then(() => {
+        newView.isLoaded = true
+      })
+    }
+
     return newView
+  }
+
+  private getUrlForId(id: string): string {
+    switch (id) {
+      case 'baidu':
+        return 'https://www.baidu.com'
+      case 'google':
+        return 'https://www.google.com'
+      case 'feishu':
+        return 'https://www.feishu.cn'
+      default:
+        return ''
+    }
+  }
+
+  private calculateViewBounds(): { x: number; y: number; width: number; height: number } {
+    if (!this.mainWindow) {
+      return { x: 0, y: 0, width: 0, height: 0 }
+    }
+
+    const contentBounds = this.mainWindow.getContentBounds()
+
+    // 确保宽度和高度至少为1，避免无效的尺寸
+    const width = Math.max(1, contentBounds.width - this.sidebarWidth - this.RESIZE_HANDLE_WIDTH)
+    const height = Math.max(1, contentBounds.height - this.TITLEBAR_HEIGHT)
+
+    return {
+      x: this.sidebarWidth + this.RESIZE_HANDLE_WIDTH,
+      y: this.TITLEBAR_HEIGHT,
+      width,
+      height
+    }
   }
 
   showSideView(id: string) {
@@ -49,30 +112,29 @@ export class WindowManager {
 
     const sideView = this.sideViews.get(id)
     if (sideView) {
-      // Remove current view if exists
+      // 移除当前视图的显示（但不销毁）
       if (this.currentViewId) {
         const currentView = this.sideViews.get(this.currentViewId)
         if (currentView) {
-          const currentBrowserView = this.mainWindow.getBrowserView()
-          if (currentBrowserView) {
-            currentBrowserView.webContents.close()
-            this.mainWindow.setBrowserView(null)
-          }
+          this.mainWindow.removeBrowserView(currentView.view)
         }
       }
 
-      // Show selected view
-      const contentBounds = this.mainWindow.getContentBounds()
-      const viewWidth = 800 // 可以根据需要调整
-      sideView.view.setBounds({
-        x: contentBounds.width - viewWidth,
-        y: 0,
-        width: viewWidth,
-        height: contentBounds.height
-      })
-
-      this.mainWindow.setContentView(sideView.view)
+      // 显示选中的视图
+      this.mainWindow.addBrowserView(sideView.view)
+      const bounds = this.calculateViewBounds()
+      sideView.view.setBounds(bounds)
       this.currentViewId = id
+
+      // 如果还没有加载过，重新加载一次
+      if (!sideView.isLoaded) {
+        const url = this.getUrlForId(id)
+        if (url) {
+          sideView.view.webContents.loadURL(url).then(() => {
+            sideView.isLoaded = true
+          })
+        }
+      }
     }
   }
 
@@ -82,11 +144,10 @@ export class WindowManager {
     const sideView = this.sideViews.get(id)
     if (sideView) {
       if (this.currentViewId === id) {
-        // Remove the view from the window
-        this.mainWindow.setContentView(new WebContentsView({}))
+        this.mainWindow.removeBrowserView(sideView.view)
         this.currentViewId = null
       }
-      // Close the webContents
+      // 销毁视图
       sideView.view.webContents.close()
       this.sideViews.delete(id)
     }
@@ -104,20 +165,13 @@ export class WindowManager {
     return this.mainWindow
   }
 
-  // 当主窗口大小改变时调用此方法
   updateViewBounds() {
     if (!this.mainWindow || !this.currentViewId) return
 
     const currentView = this.sideViews.get(this.currentViewId)
     if (currentView) {
-      const contentBounds = this.mainWindow.getContentBounds()
-      const viewWidth = 800 // 保持与创建时相同的宽度
-      currentView.view.setBounds({
-        x: contentBounds.width - viewWidth,
-        y: 0,
-        width: viewWidth,
-        height: contentBounds.height
-      })
+      const bounds = this.calculateViewBounds()
+      currentView.view.setBounds(bounds)
     }
   }
 }

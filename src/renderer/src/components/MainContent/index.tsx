@@ -1,13 +1,17 @@
-import React from 'react'
+import React, { useEffect } from 'react';
 
-export const MainContent: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  return (
-    <main className="flex-1 overflow-y-auto p-6 bg-background">
-      <div className="container mx-auto">
-        {children}
-      </div>
-    </main>
-  )
+interface MainContentProps {
+  selectedTab: string;
 }
+
+export const MainContent: React.FC<MainContentProps> = ({ selectedTab }) => {
+  useEffect(() => {
+    window.electron.switchTab(selectedTab);
+  }, [selectedTab]);
+
+  return (
+    <main className="flex-1 overflow-hidden" />
+  );
+};
 
 

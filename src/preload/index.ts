@@ -1,7 +1,8 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
 
-// 暴露 IPC 通信接口到渲染进程
-contextBridge.exposeInMainWorld('electron', {
+// Custom APIs for renderer
+const api = {
+  switchTab: (tab: string) => ipcRenderer.invoke('switch-tab', tab),
   ipcRenderer: {
     send: (channel: string, data: unknown) => {
       ipcRenderer.send(channel, data)
@@ -12,5 +13,19 @@ contextBridge.exposeInMainWorld('electron', {
     removeListener: (channel: string, func: (event: IpcRendererEvent, ...args: unknown[]) => void) => {
       ipcRenderer.removeListener(channel, func)
     },
-  },
-})
+  }
+}
+
+// Use `contextBridge` APIs to expose Electron APIs to
+// renderer only if context isolation is enabled, otherwise
+// just add to the DOM global.
+if (process.contextIsolated) {
+  try {
+    contextBridge.exposeInMainWorld('electron', api)
+  } catch (error) {
+    console.error(error)
+  }
+} else {
+  // @ts-ignore (define in dts)
+  window.electron = api
+}

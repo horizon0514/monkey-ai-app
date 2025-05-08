@@ -21,7 +21,7 @@ export const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
   // 当侧边栏大小改变时通知主进程
   useEffect(() => {
     const sidebarWidth = Math.floor((window.innerWidth * sidebarSize) / 100);
-    window.electron.ipcRenderer.send('sidebar-resize', { width: sidebarWidth });
+    window.electron.ipcRenderer.send('sidebar-resize', sidebarWidth);
   }, [sidebarSize]);
 
   const handleResize = (sizes: number[]) => {

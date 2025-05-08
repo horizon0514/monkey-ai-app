@@ -1,19 +1,20 @@
-import { app, nativeTheme, BaseWindow, WebContentsView } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, WebContentsView } from 'electron'
 import { join } from 'path'
-import { is } from '@electron-toolkit/utils'
+import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import theme from './bootup/theme'
 import { createMenu } from './menu'
+import { WindowManager } from './windowManager'
 
-theme()
-
-let mainWindow: BaseWindow | null = null
+let mainWindow: BrowserWindow | null = null
+let windowManager: WindowManager | null = null
 
 function createWindow() {
-  // Create the base window
-  mainWindow = new BaseWindow({
+  // Create the browser window.
+  mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    show: false,
+    autoHideMenuBar: false,
     ...(process.platform === 'linux' ? { icon } : {}),
     titleBarStyle: 'hidden',
     trafficLightPosition: { x: 10, y: 15 },
@@ -21,39 +22,98 @@ function createWindow() {
     transparent: true,
     backgroundColor: '#00000000',
     useContentSize: false,
-    show: false,
-  })
-
-  // Create the main web contents view
-  const mainView = new WebContentsView({
     webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
       preload: join(__dirname, '../preload/index.js'),
+      sandbox: false,
+      nodeIntegration: true,
+      contextIsolation: true
     }
   })
 
-  // Set the main view as the window's content
-  mainWindow.setContentView(mainView)
+  windowManager = new WindowManager(mainWindow)
 
   // Create application menu
   createMenu(mainWindow)
 
-  // Load the content
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainView.webContents.loadURL(process.env['ELECTRON_RENDERER_URL'])
-  } else {
-    mainView.webContents.loadFile(join(__dirname, '../renderer/index.html'))
-  }
-
-  // Listen for the webContents to be ready
-  mainView.webContents.once('did-finish-load', () => {
+  mainWindow.on('ready-to-show', () => {
     mainWindow?.show()
-    // 初始化时发送当前主题
-    const isDark = nativeTheme.shouldUseDarkColors
-    mainView.webContents.send('theme-changed', isDark ? 'dark' : 'light')
   })
+
+  mainWindow.webContents.setWindowOpenHandler((details) => {
+    shell.openExternal(details.url)
+    return { action: 'deny' }
+  })
+
+  // HMR for renderer base on electron-vite cli.
+  // Load the remote URL for development or the local html file for production.
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+  } else {
+    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+  }
 }
+
+// This method will be called when Electron has finished
+// initialization and is ready to create browser windows.
+// Some APIs can only be used after this event occurs.
+app.whenReady().then(() => {
+  // Set app user model id for windows
+  electronApp.setAppUserModelId('com.electron')
+
+  // Default open or close DevTools by F12 in development
+  // and ignore CommandOrControl + R in production.
+  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
+  app.on('browser-window-created', (_, window) => {
+    optimizer.watchWindowShortcuts(window)
+  })
+
+  createWindow()
+
+  app.on('activate', function () {
+    // On macOS it's common to re-create a window in the app when the
+    // dock icon is clicked and there are no other windows open.
+    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  })
+
+  // Setup IPC handlers
+  ipcMain.handle('switch-tab', async (_, tab: string) => {
+    if (!windowManager) return
+
+    switch (tab) {
+      case 'baidu':
+        windowManager.createSideView('baidu', '百度', {
+          webPreferences: {
+            contextIsolation: true
+          }
+        })
+        windowManager.showSideView('baidu')
+        break
+      case 'google':
+        windowManager.createSideView('google', '谷歌', {
+          webPreferences: {
+            contextIsolation: true
+          }
+        })
+        windowManager.showSideView('google')
+        break
+      case 'feishu':
+        windowManager.createSideView('feishu', '飞书', {
+          webPreferences: {
+            contextIsolation: true
+          }
+        })
+        windowManager.showSideView('feishu')
+        break
+    }
+  })
+
+  // 监听侧边栏大小变化
+  ipcMain.on('sidebar-resize', (_, width: number) => {
+    if (windowManager) {
+      windowManager.updateSidebarWidth(width)
+    }
+  })
+})
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
@@ -61,19 +121,11 @@ function createWindow() {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
-    mainWindow = null
   }
 })
 
-app.on('activate', () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (BaseWindow.getAllWindows().length === 0) {
-    createWindow()
-  }
-})
-
-app.whenReady().then(createWindow)
+// In this file you can include the rest of your app"s specific main process
+// code. You can also put them in separate files and require them here.
 
 
 
