@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+const plugin = require('tailwindcss/plugin');
+
 module.exports = {
   darkMode: ["class"],
   content: [
@@ -73,5 +75,26 @@ module.exports = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"),
+    plugin(({ addUtilities }) => {
+      addUtilities({
+        '.drag-region': {
+          '-webkit-app-region': 'drag',
+          '-webkit-user-select': 'none',
+          'user-select': 'none',
+
+          button: {
+            '-webkit-app-region': 'no-drag',
+            '-webkit-user-select': 'auto',
+            'user-select': 'auto',
+          },
+        },
+        '.no-drag': {
+          '-webkit-app-region': 'no-drag',
+          '-webkit-user-select': 'auto',
+          'user-select': 'auto',
+        },
+      });
+    }),
+  ],
 }

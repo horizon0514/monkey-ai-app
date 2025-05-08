@@ -12,8 +12,8 @@ export const Titlebar: React.FC<TitlebarProps> = () => {
     >
       <div className="w-[78px]" /> {/* macOS traffic light 占位 */}
       <div className="flex items-center gap-2 px-2">
-        <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-primary/10">
-          <Sparkles size={14} className="text-primary" />
+        <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-primary/10 transition-all hover:bg-primary/20 hover:scale-105">
+          <Sparkles size={14} className="text-primary transition-transform hover:scale-110" />
         </div>
         <span className="text-sm font-medium">AI 助手</span>
       </div>

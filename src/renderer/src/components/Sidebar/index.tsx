@@ -17,7 +17,7 @@ const SITE_ICONS: Record<string, LucideIcon> = {
 
 export const Sidebar: React.FC<SidebarProps> = ({ onTabChange }) => {
   return (
-    <div className="h-full bg-background border-r border-border/40">
+    <div className="h-full bg-background border-r border-border/40 drag-region">
       <div className="flex flex-col h-full py-4">
         <div className="px-2 mb-2">
           <p className="px-2 text-sm text-muted-foreground">
@@ -32,10 +32,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onTabChange }) => {
                 <TabsTrigger
                   key={site.id}
                   value={site.id}
-                  className="justify-start gap-3 px-4 py-2.5 text-sm font-medium transition-all hover:bg-muted/50 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                  className="no-drag group relative justify-start gap-3 px-4 py-2.5 text-sm font-medium transition-all hover:bg-muted/50 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
                 >
-                  <Icon size={18} className="shrink-0" />
-                  <span>{site.title}</span>
+                  <Icon
+                    size={18}
+                    className="shrink-0 transition-transform group-hover:scale-110 group-data-[state=active]:text-primary"
+                  />
+                  <span className="transition-colors group-hover:text-foreground/90">{site.title}</span>
                 </TabsTrigger>
               );
             })}
