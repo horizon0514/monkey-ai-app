@@ -3,11 +3,11 @@
  * Manages multiple side views that can be switched from a left panel
  */
 
-import { BrowserWindow, BrowserView, WebPreferences } from 'electron'
+import { BrowserWindow, WebContentsView, WebPreferences } from 'electron'
 
 interface SideView {
   id: string
-  view: BrowserView
+  view: WebContentsView
   title: string
   isLoaded: boolean
 }
@@ -16,7 +16,7 @@ export class WindowManager {
   private mainWindow: BrowserWindow | null = null
   private sideViews: Map<string, SideView> = new Map()
   private currentViewId: string | null = null
-  private readonly TITLEBAR_HEIGHT = 38
+  private readonly TITLEBAR_HEIGHT = 0
   private readonly RESIZE_HANDLE_WIDTH = 6
   private sidebarWidth = 240
 
@@ -44,7 +44,7 @@ export class WindowManager {
     }
 
     // 创建新的视图
-    const sideView = new BrowserView({
+    const view = new WebContentsView({
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
@@ -52,12 +52,9 @@ export class WindowManager {
       }
     })
 
-    // 设置背景色，与应用主题匹配
-    sideView.setBackgroundColor('#ffffff')
-
     const newView: SideView = {
       id,
-      view: sideView,
+      view,
       title,
       isLoaded: false
     }
@@ -67,7 +64,7 @@ export class WindowManager {
     // 加载对应的URL
     const url = this.getUrlForId(id)
     if (url) {
-      sideView.webContents.loadURL(url).then(() => {
+      view.webContents.loadURL(url).then(() => {
         newView.isLoaded = true
       })
     }
@@ -116,12 +113,12 @@ export class WindowManager {
       if (this.currentViewId) {
         const currentView = this.sideViews.get(this.currentViewId)
         if (currentView) {
-          this.mainWindow.removeBrowserView(currentView.view)
+          this.mainWindow.contentView.removeChildView(currentView.view)
         }
       }
 
       // 显示选中的视图
-      this.mainWindow.addBrowserView(sideView.view)
+      this.mainWindow.contentView.addChildView(sideView.view)
       const bounds = this.calculateViewBounds()
       sideView.view.setBounds(bounds)
       this.currentViewId = id
@@ -144,10 +141,9 @@ export class WindowManager {
     const sideView = this.sideViews.get(id)
     if (sideView) {
       if (this.currentViewId === id) {
-        this.mainWindow.removeBrowserView(sideView.view)
+        this.mainWindow.contentView.removeChildView(sideView.view)
         this.currentViewId = null
       }
-      // 销毁视图
       sideView.view.webContents.close()
       this.sideViews.delete(id)
     }

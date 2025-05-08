@@ -33,7 +33,7 @@ function createWindow() {
   windowManager = new WindowManager(mainWindow)
 
   // Create application menu
-  createMenu(mainWindow)
+  createMenu(mainWindow, windowManager)
 
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show()

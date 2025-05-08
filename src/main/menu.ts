@@ -1,7 +1,7 @@
-import { Menu, MenuItemConstructorOptions, app, shell } from 'electron'
-import type { BaseWindow, WebContentsView } from 'electron'
+import { Menu, MenuItemConstructorOptions, app, shell, BrowserWindow } from 'electron'
+import { WindowManager } from './windowManager'
 
-export function createMenu(window: BaseWindow) {
+export function createMenu(window: BrowserWindow, windowManager: WindowManager) {
   const isMac = process.platform === 'darwin'
 
   const template: MenuItemConstructorOptions[] = [
@@ -70,12 +70,19 @@ export function createMenu(window: BaseWindow) {
         { role: 'togglefullscreen' as const },
         { type: 'separator' as const },
         {
-          label: 'Toggle Developer Tools',
+          label: 'Toggle Main Window DevTools',
+          accelerator: isMac ? 'Alt+Command+J' : 'Alt+Shift+J',
+          click: () => {
+            window.webContents.toggleDevTools()
+          }
+        },
+        {
+          label: 'Toggle Web View DevTools',
           accelerator: isMac ? 'Alt+Command+I' : 'Alt+Shift+I',
           click: () => {
-            const view = window.getContentView() as WebContentsView
-            if (view?.webContents) {
-              view.webContents.toggleDevTools()
+            const currentView = windowManager.getCurrentView()
+            if (currentView?.view.webContents) {
+              currentView.view.webContents.toggleDevTools()
             }
           }
         }
