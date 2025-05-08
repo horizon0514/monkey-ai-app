@@ -5,6 +5,12 @@
 
 import { BrowserWindow, WebContentsView, WebPreferences } from 'electron'
 
+interface SiteConfig {
+  id: string
+  title: string
+  url: string
+}
+
 interface SideView {
   id: string
   view: WebContentsView
@@ -17,8 +23,9 @@ export class WindowManager {
   private sideViews: Map<string, SideView> = new Map()
   private currentViewId: string | null = null
   private readonly TITLEBAR_HEIGHT = 0
-  private readonly RESIZE_HANDLE_WIDTH = 6
+  private readonly RESIZE_HANDLE_WIDTH = 1
   private sidebarWidth = 240
+  private siteConfigs: Map<string, SiteConfig> = new Map()
 
   constructor(mainWindow: BrowserWindow) {
     this.mainWindow = mainWindow
@@ -32,6 +39,17 @@ export class WindowManager {
   updateSidebarWidth(width: number) {
     this.sidebarWidth = width
     this.updateViewBounds()
+  }
+
+  setSiteConfigs(configs: SiteConfig[]) {
+    this.siteConfigs.clear()
+    for (const config of configs) {
+      this.siteConfigs.set(config.id, config)
+    }
+  }
+
+  getSiteConfigs(): SiteConfig[] {
+    return Array.from(this.siteConfigs.values())
   }
 
   createSideView(id: string, title: string, options?: { webPreferences?: WebPreferences }): SideView {
@@ -73,16 +91,8 @@ export class WindowManager {
   }
 
   private getUrlForId(id: string): string {
-    switch (id) {
-      case 'deepseek':
-        return 'https://chat.deepseek.com/'
-      case 'tongyi':
-        return 'https://tongyi.aliyun.com/'
-      case 'wenxin':
-        return 'https://yiyan.baidu.com/'
-      default:
-        return ''
-    }
+    const config = this.siteConfigs.get(id)
+    return config?.url || ''
   }
 
   private calculateViewBounds(): { x: number; y: number; width: number; height: number } {

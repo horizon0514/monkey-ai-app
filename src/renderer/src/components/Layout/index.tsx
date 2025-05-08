@@ -49,10 +49,7 @@ export const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
             : undefined
         }
       >
-        <Titlebar
-          onToggleSidebar={handleToggleSidebar}
-          isSidebarCollapsed={isSidebarCollapsed}
-        />
+        <Titlebar />
       </div>
       <ResizablePanelGroup
         direction="horizontal"
@@ -68,13 +65,13 @@ export const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
               defaultSize={sidebarSize}
               minSize={MIN_SIDEBAR_SIZE}
               maxSize={30}
-              className="min-h-full pt-8"
+              className="min-h-full pt-12"
             >
               <div className="flex h-full flex-col">
                 {sidebar}
               </div>
             </ResizablePanel>
-            <ResizableHandle withHandle />
+            <ResizableHandle/>
           </>
         )}
         <ResizablePanel

@@ -79,31 +79,14 @@ app.whenReady().then(() => {
   ipcMain.handle('switch-tab', async (_, tab: string) => {
     if (!windowManager) return
 
-    switch (tab) {
-      case 'deepseek':
-        windowManager.createSideView('deepseek', 'DeepSeek', {
-          webPreferences: {
-            contextIsolation: true
-          }
-        })
-        windowManager.showSideView('deepseek')
-        break
-      case 'tongyi':
-        windowManager.createSideView('tongyi', '通义千问', {
-          webPreferences: {
-            contextIsolation: true
-          }
-        })
-        windowManager.showSideView('tongyi')
-        break
-      case 'wenxin':
-        windowManager.createSideView('wenxin', '文心一言', {
-          webPreferences: {
-            contextIsolation: true
-          }
-        })
-        windowManager.showSideView('wenxin')
-        break
+    const siteConfig = windowManager.getSiteConfigs().find(config => config.id === tab)
+    if (siteConfig) {
+      windowManager.createSideView(siteConfig.id, siteConfig.title, {
+        webPreferences: {
+          contextIsolation: true
+        }
+      })
+      windowManager.showSideView(siteConfig.id)
     }
   })
 
@@ -112,6 +95,17 @@ app.whenReady().then(() => {
     if (windowManager) {
       windowManager.updateSidebarWidth(width)
     }
+  })
+
+  // 处理网站配置
+  ipcMain.handle('get-site-configs', () => {
+    if (!windowManager) return []
+    return windowManager.getSiteConfigs()
+  })
+
+  ipcMain.handle('set-site-configs', (_, configs: any[]) => {
+    if (!windowManager) return
+    windowManager.setSiteConfigs(configs)
   })
 })
 

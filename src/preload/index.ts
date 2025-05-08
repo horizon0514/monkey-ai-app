@@ -3,6 +3,8 @@ import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
 // Custom APIs for renderer
 const api = {
   switchTab: (tab: string) => ipcRenderer.invoke('switch-tab', tab),
+  getSiteConfigs: () => ipcRenderer.invoke('get-site-configs'),
+  setSiteConfigs: (configs: unknown) => ipcRenderer.invoke('set-site-configs', configs),
   ipcRenderer: {
     send: (channel: string, data: unknown) => {
       ipcRenderer.send(channel, data)
