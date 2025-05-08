@@ -25,15 +25,10 @@ export const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
   }, [sidebarSize]);
 
   const handleResize = (sizes: number[]) => {
-    if (!isSidebarCollapsed && sizes[0] > 0) {
+    if (sizes[0] > 0) {
       setPrevSize(sizes[0]);
       setSidebarSize(sizes[0]);
     }
-  };
-
-  const handleToggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-    setSidebarSize(isSidebarCollapsed ? prevSize : COLLAPSED_SIZE);
   };
 
   return (
