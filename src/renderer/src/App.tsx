@@ -4,7 +4,7 @@ import { MainContent } from '@renderer/components/MainContent';
 import { useState } from 'react';
 
 function App() {
-  const [selectedTab, setSelectedTab] = useState('baidu');
+  const [selectedTab, setSelectedTab] = useState('deepseek');
 
   return (
     <Layout

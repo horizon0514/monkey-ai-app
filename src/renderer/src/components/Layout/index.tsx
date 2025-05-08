@@ -4,7 +4,7 @@ import { Titlebar } from '../Titlebar';
 import { cn } from '@renderer/lib/utils';
 
 const MIN_SIDEBAR_SIZE = 15; // 最小宽度百分比
-const DEFAULT_SIDEBAR_SIZE = 20; // 默认宽度百分比
+const DEFAULT_SIDEBAR_SIZE = 18; // 默认宽度百分比
 const COLLAPSED_SIZE = 0; // 折叠时的宽度
 
 interface LayoutProps {
@@ -37,7 +37,7 @@ export const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
   };
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col bg-background">
       <div
         className={cn(
           "absolute top-0 left-0 z-10",
@@ -67,13 +67,11 @@ export const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
               key={`sidebar-${sidebarSize}`}
               defaultSize={sidebarSize}
               minSize={MIN_SIDEBAR_SIZE}
-              maxSize={40}
-              className="min-h-full bg-background pt-8"
+              maxSize={30}
+              className="min-h-full pt-8"
             >
               <div className="flex h-full flex-col">
-                <div className="overflow-hidden">
-                  {sidebar}
-                </div>
+                {sidebar}
               </div>
             </ResizablePanel>
             <ResizableHandle withHandle />
@@ -83,10 +81,9 @@ export const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
           key={`main-${isSidebarCollapsed ? 100 : 100 - sidebarSize}`}
           defaultSize={isSidebarCollapsed ? 100 : 100 - sidebarSize}
           minSize={30}
+          className="pt-8"
         >
-          <div className="h-full bg-background">
-            {children}
-          </div>
+          {children}
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

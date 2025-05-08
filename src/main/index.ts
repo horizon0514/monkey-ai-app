@@ -80,29 +80,29 @@ app.whenReady().then(() => {
     if (!windowManager) return
 
     switch (tab) {
-      case 'baidu':
-        windowManager.createSideView('baidu', '百度', {
+      case 'deepseek':
+        windowManager.createSideView('deepseek', 'DeepSeek', {
           webPreferences: {
             contextIsolation: true
           }
         })
-        windowManager.showSideView('baidu')
+        windowManager.showSideView('deepseek')
         break
-      case 'google':
-        windowManager.createSideView('google', '谷歌', {
+      case 'tongyi':
+        windowManager.createSideView('tongyi', '通义千问', {
           webPreferences: {
             contextIsolation: true
           }
         })
-        windowManager.showSideView('google')
+        windowManager.showSideView('tongyi')
         break
-      case 'feishu':
-        windowManager.createSideView('feishu', '飞书', {
+      case 'wenxin':
+        windowManager.createSideView('wenxin', '文心一言', {
           webPreferences: {
             contextIsolation: true
           }
         })
-        windowManager.showSideView('feishu')
+        windowManager.showSideView('wenxin')
         break
     }
   })

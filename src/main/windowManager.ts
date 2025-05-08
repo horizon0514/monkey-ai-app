@@ -74,12 +74,12 @@ export class WindowManager {
 
   private getUrlForId(id: string): string {
     switch (id) {
-      case 'baidu':
-        return 'https://www.baidu.com'
-      case 'google':
-        return 'https://www.google.com'
-      case 'feishu':
-        return 'https://www.feishu.cn'
+      case 'deepseek':
+        return 'https://chat.deepseek.com/'
+      case 'tongyi':
+        return 'https://tongyi.aliyun.com/'
+      case 'wenxin':
+        return 'https://yiyan.baidu.com/'
       default:
         return ''
     }
