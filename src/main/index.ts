@@ -4,9 +4,11 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { createMenu } from './menu'
 import { WindowManager } from './windowManager'
+import { bootup } from './bootup'
 
 let mainWindow: BrowserWindow | null = null
 let windowManager: WindowManager | null = null
+
 
 function createWindow() {
   // Create the browser window.
@@ -19,8 +21,6 @@ function createWindow() {
     titleBarStyle: 'hidden',
     trafficLightPosition: { x: 10, y: 15 },
     ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
-    transparent: true,
-    backgroundColor: '#00000000',
     useContentSize: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -121,7 +121,7 @@ app.on('window-all-closed', () => {
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.
 
-
+bootup()
 
 
 
