@@ -1,5 +1,4 @@
 import React from 'react';
-import { Sparkles } from 'lucide-react';
 import { cn } from '@renderer/lib/utils';
 
 // 声明 window.platform 类型
@@ -25,11 +24,11 @@ export const Titlebar: React.FC<TitlebarProps> = () => {
       )}
       style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
-      {isMacOS && <div className="w-[78px] absolute left-0" />} {/* macOS traffic light 占位 */}
+      {isMacOS && <div className="w-[78px]" />} {/* macOS traffic light 占位 */}
       <div className="flex items-center gap-2 px-2">
-        <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-primary/10 transition-all hover:bg-primary/20 hover:scale-105">
+        {/* <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-primary/10 transition-all hover:bg-primary/20 hover:scale-105">
           <Sparkles size={14} className="text-primary transition-transform hover:scale-110" />
-        </div>
+        </div> */}
         <span className="text-sm font-medium">ChatMonkey</span>
       </div>
     </div>

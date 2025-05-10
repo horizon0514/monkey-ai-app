@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@renderer/components/ui/resizable';
 import { Titlebar } from '../Titlebar';
-import { Topbar } from '../Topbar';
 import { cn } from '@renderer/lib/utils';
 
 const MIN_SIDEBAR_SIZE = 15; // 最小宽度百分比
 const DEFAULT_SIDEBAR_SIZE = 18; // 默认宽度百分比
-const COLLAPSED_SIZE = 0; // 折叠时的宽度
 
 interface LayoutProps {
   sidebar?: React.ReactNode;
@@ -16,9 +14,9 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ sidebar, topbar, children }) => {
   const [sidebarSize, setSidebarSize] = useState(DEFAULT_SIDEBAR_SIZE);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [prevSize, setPrevSize] = useState(DEFAULT_SIDEBAR_SIZE);
-  const [isResizing, setIsResizing] = useState(false);
+  const [isSidebarCollapsed, _setIsSidebarCollapsed] = useState(false);
+  const [_prevSize, setPrevSize] = useState(DEFAULT_SIDEBAR_SIZE);
+  const [_isResizing, setIsResizing] = useState(false);
 
   // 当侧边栏大小改变时通知主进程
   useEffect(() => {

@@ -19,7 +19,7 @@ function createWindow() {
     autoHideMenuBar: false,
     ...(process.platform === 'linux' ? { icon } : {}),
     titleBarStyle: 'hidden',
-    trafficLightPosition: { x: 10, y: 15 },
+    trafficLightPosition: { x: 15, y: 15 },
     ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
     useContentSize: false,
     webPreferences: {
@@ -68,7 +68,7 @@ function createSettingsWindow() {
     autoHideMenuBar: false,
     ...(process.platform === 'linux' ? { icon } : {}),
     titleBarStyle: 'hidden',
-    trafficLightPosition: { x: 10, y: 15 },
+    trafficLightPosition: { x: 15, y: 15 },
     ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -98,14 +98,6 @@ function createSettingsWindow() {
   } else {
     settingsWindow.loadFile(join(__dirname, '../renderer/settings.html'))
   }
-}
-
-// 同步主题到所有窗口
-function syncThemeToAllWindows(theme: string) {
-  const windows = BrowserWindow.getAllWindows();
-  windows.forEach(window => {
-    window.webContents.send('theme-changed', theme);
-  });
 }
 
 // This method will be called when Electron has finished
