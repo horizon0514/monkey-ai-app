@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@renderer/components/ui/resizable';
 import { Titlebar } from '../Titlebar';
+import { Topbar } from '../Topbar';
 import { cn } from '@renderer/lib/utils';
 
 const MIN_SIDEBAR_SIZE = 15; // 最小宽度百分比
@@ -9,10 +10,11 @@ const COLLAPSED_SIZE = 0; // 折叠时的宽度
 
 interface LayoutProps {
   sidebar?: React.ReactNode;
+  topbar?: React.ReactNode;
   children?: React.ReactNode;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
+export const Layout: React.FC<LayoutProps> = ({ sidebar, topbar, children }) => {
   const [sidebarSize, setSidebarSize] = useState(DEFAULT_SIDEBAR_SIZE);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [prevSize, setPrevSize] = useState(DEFAULT_SIDEBAR_SIZE);
@@ -73,8 +75,8 @@ export const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
           key={`main-${isSidebarCollapsed ? 100 : 100 - sidebarSize}`}
           defaultSize={isSidebarCollapsed ? 100 : 100 - sidebarSize}
           minSize={30}
-          className="pt-8"
         >
+          {topbar}
           {children}
         </ResizablePanel>
       </ResizablePanelGroup>

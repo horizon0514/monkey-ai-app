@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, nativeTheme } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -7,8 +7,8 @@ import { WindowManager } from './windowManager'
 import { bootup } from './bootup'
 
 let mainWindow: BrowserWindow | null = null
+let settingsWindow: BrowserWindow | null = null
 let windowManager: WindowManager | null = null
-
 
 function createWindow() {
   // Create the browser window.
@@ -51,6 +51,61 @@ function createWindow() {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+}
+
+// 创建设置窗口
+function createSettingsWindow() {
+  // 如果已经存在设置窗口，就显示它
+  if (settingsWindow) {
+    settingsWindow.show()
+    return
+  }
+
+  settingsWindow = new BrowserWindow({
+    width: 480,
+    height: 500,
+    show: false,
+    autoHideMenuBar: false,
+    ...(process.platform === 'linux' ? { icon } : {}),
+    titleBarStyle: 'hidden',
+    trafficLightPosition: { x: 10, y: 15 },
+    ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false,
+      nodeIntegration: true,
+      contextIsolation: true
+    },
+    // parent: mainWindow || undefined, // 不能使用Modal， trafficlight会没有
+    // modal: true,
+    alwaysOnTop: true,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+  })
+
+  settingsWindow.on('ready-to-show', () => {
+    settingsWindow?.show()
+  })
+
+  settingsWindow.on('closed', () => {
+    settingsWindow = null
+  })
+
+  // 加载设置页面
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    settingsWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/settings.html`)
+  } else {
+    settingsWindow.loadFile(join(__dirname, '../renderer/settings.html'))
+  }
+}
+
+// 同步主题到所有窗口
+function syncThemeToAllWindows(theme: string) {
+  const windows = BrowserWindow.getAllWindows();
+  windows.forEach(window => {
+    window.webContents.send('theme-changed', theme);
+  });
 }
 
 // This method will be called when Electron has finished
@@ -107,6 +162,26 @@ app.whenReady().then(() => {
     if (!windowManager) return
     windowManager.setSiteConfigs(configs)
   })
+
+  // 打开设置窗口
+  ipcMain.handle('open-settings', () => {
+    createSettingsWindow()
+  })
+
+  // 关闭设置窗口
+  ipcMain.handle('close-settings', () => {
+    if (settingsWindow) {
+      settingsWindow.hide()
+    }
+  })
+
+  // 监听主题变化
+  nativeTheme.on('updated', () => {
+    const windows = BrowserWindow.getAllWindows();
+    windows.forEach(window => {
+      window.webContents.send('system-theme-changed', nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
+    });
+  });
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common

@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import ReactDOM from 'react-dom/client'
 import './assets/index.css'
-import App from './App'
+import { SettingsModal } from './components/SettingsModal'
 
 // 应用主题
 function applyTheme(theme: string) {
@@ -32,6 +32,6 @@ window.electron.ipcRenderer.on('system-theme-changed', (_, args) => {
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <App />
+    <SettingsModal/>
   </React.StrictMode>
 )

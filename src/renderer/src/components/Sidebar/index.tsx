@@ -1,11 +1,12 @@
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@renderer/components/ui/tabs';
-import { Bot, Brain, MessageSquare, LucideIcon } from 'lucide-react';
+import { Bot, Brain, MessageSquare, LucideIcon, Settings } from 'lucide-react';
 import { sites } from '@renderer/config/sites';
 
 interface SidebarProps {
   children?: React.ReactNode;
   onTabChange?: (tab: string) => void;
+  value: string;
 }
 
 // 为每个网站ID定义对应的图标
@@ -15,16 +16,20 @@ const SITE_ICONS: Record<string, LucideIcon> = {
   wenxin: MessageSquare,
 };
 
-export const Sidebar: React.FC<SidebarProps> = ({ onTabChange }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ onTabChange, value }) => {
+  const handleSettingsClick = () => {
+    window.electron.openSettings();
+  };
+
   return (
-    <div className="h-full bg-background border-r border-border/40 drag-region">
-      <div className="flex flex-col h-full py-4">
+    <div className="h-full bg-background border-r border-border/40 drag-region flex flex-col justify-between">
+      <div className="flex flex-col py-4">
         <div className="px-2 mb-2">
           <p className="px-2 text-sm text-muted-foreground">
             选择你想要使用的 AI 助手
           </p>
         </div>
-        <Tabs defaultValue={sites[0].id} onValueChange={onTabChange} orientation="vertical" className="h-full">
+        <Tabs value={value} onValueChange={onTabChange} orientation="vertical" className="h-full">
           <TabsList className="flex flex-col h-auto space-y-1 bg-transparent px-2">
             {sites.map(site => {
               const Icon = SITE_ICONS[site.id] || Bot;
@@ -44,6 +49,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ onTabChange }) => {
             })}
           </TabsList>
         </Tabs>
+      </div>
+      <div className="p-3 flex items-center justify-start">
+        <button
+          className="no-drag flex items-center group outline-none"
+          onClick={handleSettingsClick}
+          tabIndex={0}
+        >
+          <span className="flex items-center justify-center w-9 h-9 rounded-full transition-colors hover:bg-muted/60 active:bg-muted/80">
+            <Settings size={20} className="text-muted-foreground group-hover:text-foreground group-active:text-foreground transition-colors" />
+          </span>
+        </button>
       </div>
     </div>
   );

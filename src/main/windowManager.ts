@@ -22,7 +22,7 @@ export class WindowManager {
   private mainWindow: BrowserWindow | null = null
   private sideViews: Map<string, SideView> = new Map()
   private currentViewId: string | null = null
-  private readonly TITLEBAR_HEIGHT = 0
+  private readonly TITLEBAR_HEIGHT = 48
   private readonly RESIZE_HANDLE_WIDTH = 1
   private sidebarWidth = 240
   private siteConfigs: Map<string, SiteConfig> = new Map()
