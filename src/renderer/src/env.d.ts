@@ -1,11 +1,13 @@
 /// <reference types="vite/client" />
 import { Theme } from './types/theme'
+import { SiteConfig } from '../../../shared/types'
+
 declare global {
   interface Window {
     electron: {
       switchTab: (tab: string) => Promise<void>;
-      getSiteConfigs: () => Promise<{ id: string; title: string; url: string; }[]>;
-      setSiteConfigs: (configs: { id: string; title: string; url: string; }[]) => Promise<void>;
+      getSiteConfigs: () => Promise<SiteConfig[]>;
+      setSiteConfigs: (configs: SiteConfig[]) => Promise<void>;
       openSettings: () => Promise<void>;
       closeSettings: () => Promise<void>;
       setTheme: (theme: Theme) => Promise<void>;

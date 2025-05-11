@@ -16,4 +16,4 @@ export interface TabConfig {
 export interface TabManagerState {
   tabs: Tab[];
   activeTabId: string | null;
-} 
+}

@@ -2,15 +2,24 @@ import React, { useEffect, useState } from 'react';
 import { cn } from '@renderer/lib/utils';
 import { Sun, Moon, Monitor } from 'lucide-react';
 import { Theme } from '@renderer/types/theme';
+import { SiteConfig } from '@renderer/config/sites';
 
 export const SettingsModal: React.FC = () => {
   const isMacOS = window.platform.os === 'darwin';
   const [currentTheme, setCurrentTheme] = useState<Theme>('system');
+  const [sites, setSites] = useState<SiteConfig[]>([]);
 
   // 获取当前主题
   useEffect(() => {
     window.electron.getTheme().then((theme: Theme) => {
       setCurrentTheme(theme);
+    });
+  }, []);
+
+  // 获取站点配置
+  useEffect(() => {
+    window.electron.getSiteConfigs().then((configs: SiteConfig[]) => {
+      setSites(configs);
     });
   }, []);
 
@@ -30,6 +39,15 @@ export const SettingsModal: React.FC = () => {
   const handleThemeChange = async (theme: Theme) => {
     await window.electron.setTheme(theme);
     setCurrentTheme(theme);
+  };
+
+  // 切换站点启用状态
+  const handleSiteToggle = async (siteId: string) => {
+    const newSites = sites.map(site =>
+      site.id === siteId ? { ...site, enabled: !site.enabled } : site
+    );
+    await window.electron.setSiteConfigs(newSites);
+    setSites(newSites);
   };
 
   return (
@@ -85,6 +103,33 @@ export const SettingsModal: React.FC = () => {
                   </button>
                 </div>
               </div>
+
+              <div className="space-y-3">
+                <h3 className={cn(
+                  "font-medium leading-none",
+                  isMacOS ? "text-sm" : "text-base"
+                )}>AI 助手</h3>
+                <p className="text-sm text-muted-foreground">
+                  选择要启用的 AI 助手。
+                </p>
+                <div className="space-y-2">
+                  {sites.map(site => (
+                    <label
+                      key={site.id}
+                      className="flex items-center space-x-3 py-2"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={site.enabled}
+                        onChange={() => handleSiteToggle(site.id)}
+                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                      />
+                      <span className="text-sm font-medium">{site.title}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <div className="space-y-3">
                 <h3 className={cn(
                   "font-medium leading-none",

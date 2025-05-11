@@ -5,10 +5,21 @@ import icon from '../../resources/icon.png?asset'
 import { createMenu } from './menu'
 import { WindowManager } from './windowManager'
 import { bootup } from './bootup'
+import { SiteConfig } from '../shared/types'
+import Store from 'electron-store'
 
 let mainWindow: BrowserWindow | null = null
 let settingsWindow: BrowserWindow | null = null
 let windowManager: WindowManager | null = null
+
+
+// 创建配置存储实例
+const store = new Store({
+  name: 'site-configs',
+  defaults: {
+    sites: []
+  }
+});
 
 function createWindow() {
   // Create the browser window.
@@ -22,6 +33,7 @@ function createWindow() {
     trafficLightPosition: { x: 15, y: 15 },
     ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
     useContentSize: false,
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#1e1e2a' : '#ffffff',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -31,6 +43,12 @@ function createWindow() {
   })
 
   windowManager = new WindowManager(mainWindow)
+
+  // 从存储中加载站点配置
+  const savedSites = store.get('sites')
+  if (savedSites && savedSites.length > 0) {
+    windowManager.setSiteConfigs(savedSites)
+  }
 
   // Create application menu
   createMenu(mainWindow, windowManager)
@@ -70,14 +88,13 @@ function createSettingsWindow() {
     titleBarStyle: 'hidden',
     trafficLightPosition: { x: 15, y: 15 },
     ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#1e1e2a' : '#ffffff',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
       nodeIntegration: true,
       contextIsolation: true
     },
-    // parent: mainWindow || undefined, // 不能使用Modal， trafficlight会没有
-    // modal: true,
     alwaysOnTop: true,
     resizable: false,
     minimizable: false,
@@ -150,9 +167,15 @@ app.whenReady().then(() => {
     return windowManager.getSiteConfigs()
   })
 
-  ipcMain.handle('set-site-configs', (_, configs: any[]) => {
+  ipcMain.handle('set-site-configs', (_, configs: SiteConfig[]) => {
     if (!windowManager) return
     windowManager.setSiteConfigs(configs)
+    // 保存到存储
+    store.set('sites', configs)
+    // 通知所有窗口配置已更改
+    BrowserWindow.getAllWindows().forEach(window => {
+      window.webContents.send('site-configs-changed')
+    })
   })
 
   // 打开设置窗口

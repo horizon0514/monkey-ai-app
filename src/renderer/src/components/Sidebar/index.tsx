@@ -1,12 +1,13 @@
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@renderer/components/ui/tabs';
 import { Bot, Brain, MessageSquare, LucideIcon, Settings } from 'lucide-react';
-import { sites } from '@renderer/config/sites';
+import { SiteConfig } from '../../../../shared/types';
 
 interface SidebarProps {
   children?: React.ReactNode;
   onTabChange?: (tab: string) => void;
   value: string;
+  sites: SiteConfig[];
 }
 
 // 为每个网站ID定义对应的图标
@@ -16,7 +17,7 @@ const SITE_ICONS: Record<string, LucideIcon> = {
   wenxin: MessageSquare,
 };
 
-export const Sidebar: React.FC<SidebarProps> = ({ onTabChange, value }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ onTabChange, value, sites }) => {
   const handleSettingsClick = () => {
     window.electron.openSettings();
   };
@@ -50,15 +51,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onTabChange, value }) => {
           </TabsList>
         </Tabs>
       </div>
-      <div className="p-3 flex items-center justify-start">
+      <div className="p-2">
         <button
-          className="no-drag flex items-center group outline-none"
           onClick={handleSettingsClick}
-          tabIndex={0}
+          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground/90 hover:bg-muted/50 rounded-md no-drag"
         >
-          <span className="flex items-center justify-center w-9 h-9 rounded-full transition-colors hover:bg-muted/60 active:bg-muted/80">
-            <Settings size={20} className="text-muted-foreground group-hover:text-foreground group-active:text-foreground transition-colors" />
-          </span>
+          <Settings size={18} className="shrink-0" />
+          设置
         </button>
       </div>
     </div>
