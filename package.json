@@ -1,6 +1,6 @@
 {
-  "name": "monkey-ai",
-  "version": "1.0.0",
+  "name": "chat-monkey",
+  "version": "1.0.1",
   "description": "An Electron application with React and TypeScript",
   "main": "./out/main/index.js",
   "author": "example.com",
@@ -15,9 +15,9 @@
     "dev": "electron-vite dev",
     "build": "npm run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
-    "build:win": "npm run build && electron-builder --win --config",
-    "build:mac": "electron-vite build && electron-builder --mac --config",
-    "build:linux": "electron-vite build && electron-builder --linux --config"
+    "build:win": "rimraf dist && npm run build && electron-builder --win --config",
+    "build:mac": "rimraf dist && npm run build build && electron-builder --mac --config",
+    "build:linux": "rimraf dist && npm run build build && electron-builder --linux --config"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.0",
@@ -54,6 +54,7 @@
     "prettier-plugin-tailwind": "^2.2.12",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "rimraf": "^6.0.1",
     "shadcn-ui": "^0.8.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3",

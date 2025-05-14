@@ -2,7 +2,8 @@ import { Layout } from '@renderer/components/Layout';
 import { Sidebar } from '@renderer/components/Sidebar';
 import { MainContent } from '@renderer/components/MainContent';
 import { useEffect, useState } from 'react';
-import { defaultSites, SiteConfig } from './config/sites';
+import { defaultSites } from './config/sites';
+import { SiteConfig } from '../../shared/types';
 import { Topbar } from './components/Topbar';
 
 function App() {

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { cn } from '@renderer/lib/utils';
 import { Sun, Moon, Monitor } from 'lucide-react';
 import { Theme } from '@renderer/types/theme';
-import { SiteConfig } from '@renderer/config/sites';
+import { SiteConfig } from '../../../shared/types';
 
 export const SettingsModal: React.FC = () => {
   const isMacOS = window.platform.os === 'darwin';

@@ -15,6 +15,8 @@ const SITE_ICONS: Record<string, LucideIcon> = {
   deepseek: Bot,
   tongyi: Brain,
   wenxin: MessageSquare,
+  yuanbao: Bot,
+  doubao: Bot,
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({ onTabChange, value, sites }) => {

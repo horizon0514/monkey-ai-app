@@ -8,10 +8,12 @@ import { bootup } from './bootup'
 import { SiteConfig } from '../shared/types'
 import Store from 'electron-store'
 
+// 初始化 electron-store
+Store.initRenderer()
+
 let mainWindow: BrowserWindow | null = null
 let settingsWindow: BrowserWindow | null = null
 let windowManager: WindowManager | null = null
-
 
 // 创建配置存储实例
 const store = new Store({
@@ -19,7 +21,7 @@ const store = new Store({
   defaults: {
     sites: []
   }
-});
+})
 
 function createWindow() {
   // Create the browser window.
@@ -61,6 +63,13 @@ function createWindow() {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
+
+  mainWindow.webContents.addListener(
+    '-add-new-contents' as any,
+    (_event, url) => {
+      console.log('did-create-window', url)
+    }
+  )
 
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.

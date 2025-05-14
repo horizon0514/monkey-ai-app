@@ -18,5 +18,17 @@ export const defaultSites: SiteConfig[] = [
     title: '文心一言',
     url: 'https://yiyan.baidu.com/',
     enabled: true
+  },
+  {
+    id: 'yuanbao',
+    title: '腾讯元宝',
+    url: 'https://yuanbao.tencent.com/chat',
+    enabled: true
+  },
+  {
+    id: 'doubao',
+    title: '豆包',
+    url: 'https://www.doubao.com/chat/',
+    enabled: true
   }
 ];

@@ -1,5 +1,5 @@
 import React from 'react';
-import { SiteConfig } from '@renderer/config/sites';
+import { SiteConfig } from '../../../../shared/types';
 
 interface TopbarProps {
   tab: SiteConfig;
