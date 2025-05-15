@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@renderer/components/ui/resizable';
 import { Titlebar } from '../Titlebar';
 import { cn } from '@renderer/lib/utils';
@@ -10,71 +10,102 @@ interface LayoutProps {
   sidebar?: React.ReactNode;
   topbar?: React.ReactNode;
   children?: React.ReactNode;
+  onSidebarCollapsedChange?: (collapsed: boolean) => void;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ sidebar, topbar, children }) => {
+export const Layout: React.FC<LayoutProps> = ({ sidebar, topbar, children, onSidebarCollapsedChange }) => {
   const [sidebarSize, setSidebarSize] = useState(DEFAULT_SIDEBAR_SIZE);
-  const [isSidebarCollapsed, _setIsSidebarCollapsed] = useState(false);
-  const [_prevSize, setPrevSize] = useState(DEFAULT_SIDEBAR_SIZE);
-  const [_isResizing, setIsResizing] = useState(false);
+  const [lastSidebarSize, setLastSidebarSize] = useState(DEFAULT_SIDEBAR_SIZE);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // 处理侧边栏大小变化
+  const handleSidebarResize = useCallback((sizes: number[]) => {
+    if (!isSidebarCollapsed && sizes[0] > 0) {
+      setSidebarSize(sizes[0]);
+      setLastSidebarSize(sizes[0]);
+    }
+  }, [isSidebarCollapsed]);
 
   // 当侧边栏大小改变时通知主进程
   useEffect(() => {
     const sidebarWidth = Math.floor((window.innerWidth * sidebarSize) / 100);
-    window.electron.ipcRenderer.send('sidebar-resize', sidebarWidth);
-  }, [sidebarSize]);
+    const mainWidth = window.innerWidth - (isSidebarCollapsed ? 0 : sidebarWidth);
 
-  const handleResize = (sizes: number[]) => {
-    if (sizes[0] > 0) {
-      setPrevSize(sizes[0]);
-      setSidebarSize(sizes[0]);
+    // 通知主进程更新侧边栏和主内容区域的宽度
+    window.electron.ipcRenderer.send('layout-resize', {
+      sidebarWidth: isSidebarCollapsed ? 0 : sidebarWidth,
+      mainWidth
+    });
+  }, [sidebarSize, isSidebarCollapsed]);
+
+  // 处理折叠状态变化
+  const handleToggleCollapse = () => {
+    if (!isSidebarCollapsed) {
+      // 折叠时保存当前宽度
+      setLastSidebarSize(sidebarSize);
+      setSidebarSize(0);
+    } else {
+      // 展开时恢复到上次的宽度
+      setSidebarSize(lastSidebarSize);
     }
+    setIsSidebarCollapsed(!isSidebarCollapsed);
   };
+
+  // 暴露折叠状态变化的回调
+  useEffect(() => {
+    onSidebarCollapsedChange?.(isSidebarCollapsed);
+  }, [isSidebarCollapsed, onSidebarCollapsedChange]);
+
+  // 计算侧边栏宽度
+  const sidebarWidth = Math.floor((window.innerWidth * (isSidebarCollapsed ? 0 : sidebarSize)) / 100);
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      <div
-        className={cn(
-          "absolute top-0 left-0 z-10",
-          isSidebarCollapsed ? "w-full" : "w-[var(--sidebar-width)]"
-        )}
-        style={
-          !isSidebarCollapsed
-            ? { '--sidebar-width': `${Math.floor((window.innerWidth * sidebarSize) / 100)}px` } as React.CSSProperties
-            : undefined
-        }
-      >
-        <Titlebar />
+      <div className="flex w-full">
+        {/* Titlebar 和 Topbar 区域 */}
+        <div className="flex w-full">
+          {!isSidebarCollapsed && (
+            <div
+              style={{ width: `${sidebarWidth}px` }}
+              className="shrink-0"
+            >
+              <Titlebar onToggleSidebar={handleToggleCollapse} isSidebarCollapsed={isSidebarCollapsed} />
+            </div>
+          )}
+          <div className="flex-1">
+            {isSidebarCollapsed ? (
+              <div className="flex w-full">
+                <Titlebar onToggleSidebar={handleToggleCollapse} isSidebarCollapsed={isSidebarCollapsed} />
+                <div className="flex-1">
+                  {topbar}
+                </div>
+              </div>
+            ) : (
+              topbar
+            )}
+          </div>
+        </div>
       </div>
       <ResizablePanelGroup
         direction="horizontal"
-        onLayout={handleResize}
         className="flex-1"
-        onDragStart={() => setIsResizing(true)}
-        onDragEnd={() => setIsResizing(false)}
+        onLayout={handleSidebarResize}
       >
-        {!isSidebarCollapsed && (
-          <>
-            <ResizablePanel
-              key={`sidebar-${sidebarSize}`}
-              defaultSize={sidebarSize}
-              minSize={MIN_SIDEBAR_SIZE}
-              maxSize={30}
-              className="min-h-full pt-12"
-            >
-              <div className="flex h-full flex-col">
-                {sidebar}
-              </div>
-            </ResizablePanel>
-            <ResizableHandle/>
-          </>
-        )}
         <ResizablePanel
-          key={`main-${isSidebarCollapsed ? 100 : 100 - sidebarSize}`}
+          defaultSize={isSidebarCollapsed ? 0 : sidebarSize}
+          minSize={isSidebarCollapsed ? 0 : MIN_SIDEBAR_SIZE}
+          maxSize={isSidebarCollapsed ? 0 : 30}
+          className={cn("min-h-full", isSidebarCollapsed && "hidden")}
+        >
+          <div className="flex h-full flex-col">
+            {sidebar}
+          </div>
+        </ResizablePanel>
+        {!isSidebarCollapsed && <ResizableHandle />}
+        <ResizablePanel
           defaultSize={isSidebarCollapsed ? 100 : 100 - sidebarSize}
           minSize={30}
         >
-          {topbar}
           {children}
         </ResizablePanel>
       </ResizablePanelGroup>

@@ -2,18 +2,17 @@ import { Layout } from '@renderer/components/Layout';
 import { Sidebar } from '@renderer/components/Sidebar';
 import { MainContent } from '@renderer/components/MainContent';
 import { useEffect, useState } from 'react';
-import { defaultSites } from './config/sites';
+import { defaultSites } from '../../shared/defaultSites';
 import { SiteConfig } from '../../shared/types';
 import { Topbar } from './components/Topbar';
+import { ThemeProvider } from './components/ThemeProvider';
 
 function App() {
   const [sites, setSites] = useState<SiteConfig[]>(defaultSites);
   const [selectedTab, setSelectedTab] = useState(defaultSites[0].id);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   useEffect(() => {
-    // 初始化时发送网站配置到主进程
-    window.electron.setSiteConfigs(defaultSites);
-
     // 监听站点配置变化
     const handleSiteConfigsChange = async () => {
       const configs = await window.electron.getSiteConfigs();
@@ -43,7 +42,7 @@ function App() {
   const enabledSites = sites.filter(site => site.enabled);
 
   return (
-    <>
+    <ThemeProvider defaultTheme="light" storageKey="monkey-ui-theme">
       <Layout
         sidebar={
           <Sidebar
@@ -53,10 +52,11 @@ function App() {
           />
         }
         topbar={<Topbar tab={enabledSites.find(site => site.id === selectedTab) || enabledSites[0]} />}
+        onSidebarCollapsedChange={setIsSidebarCollapsed}
       >
         <MainContent selectedTab={selectedTab} />
       </Layout>
-    </>
+    </ThemeProvider>
   );
 }
 

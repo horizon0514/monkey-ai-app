@@ -1,9 +1,9 @@
-import { app, shell, BrowserWindow, ipcMain, nativeTheme } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, nativeTheme, globalShortcut } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { createMenu } from './menu'
-import { WindowManager } from './windowManager'
+import { WindowManager, WindowType } from './windowManager'
 import { bootup } from './bootup'
 import { SiteConfig } from '../shared/types'
 import Store from 'electron-store'
@@ -12,7 +12,6 @@ import Store from 'electron-store'
 Store.initRenderer()
 
 let mainWindow: BrowserWindow | null = null
-let settingsWindow: BrowserWindow | null = null
 let windowManager: WindowManager | null = null
 
 // 创建配置存储实例
@@ -22,6 +21,9 @@ const store = new Store({
     sites: []
   }
 })
+
+// 添加启动时间监控
+const startupTime = Date.now()
 
 function createWindow() {
   // Create the browser window.
@@ -34,13 +36,15 @@ function createWindow() {
     titleBarStyle: 'hidden',
     trafficLightPosition: { x: 15, y: 15 },
     ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
-    useContentSize: false,
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#1e1e2a' : '#ffffff',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
       nodeIntegration: true,
-      contextIsolation: true
+      contextIsolation: true,
+      webSecurity: true,
+      // 移除不必要的实验性功能和配置
+      defaultEncoding: 'UTF-8'
     }
   })
 
@@ -55,7 +59,8 @@ function createWindow() {
   // Create application menu
   createMenu(mainWindow, windowManager)
 
-  mainWindow.on('ready-to-show', () => {
+  // 优化窗口显示时机
+  mainWindow.once('ready-to-show', () => {
     mainWindow?.show()
   })
 
@@ -80,67 +85,43 @@ function createWindow() {
   }
 }
 
-// 创建设置窗口
-function createSettingsWindow() {
-  // 如果已经存在设置窗口，就显示它
-  if (settingsWindow) {
-    settingsWindow.show()
-    return
-  }
-
-  settingsWindow = new BrowserWindow({
-    width: 480,
-    height: 500,
-    show: false,
-    autoHideMenuBar: false,
-    ...(process.platform === 'linux' ? { icon } : {}),
-    titleBarStyle: 'hidden',
-    trafficLightPosition: { x: 15, y: 15 },
-    ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
-    backgroundColor: nativeTheme.shouldUseDarkColors ? '#1e1e2a' : '#ffffff',
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
-      nodeIntegration: true,
-      contextIsolation: true
-    },
-    alwaysOnTop: true,
-    resizable: false,
-    minimizable: false,
-    maximizable: false,
-  })
-
-  settingsWindow.on('ready-to-show', () => {
-    settingsWindow?.show()
-  })
-
-  settingsWindow.on('closed', () => {
-    settingsWindow = null
-  })
-
-  // 加载设置页面
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    settingsWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/settings.html`)
-  } else {
-    settingsWindow.loadFile(join(__dirname, '../renderer/settings.html'))
-  }
-}
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  console.log(`App ready time: ${Date.now() - startupTime}ms`)
+
+  bootup()
+
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
+  createWindow()
+
+  // 监控窗口加载完成时间
+  const mainWindow = windowManager?.getWindow(WindowType.MAIN)
+  mainWindow?.webContents.once('did-finish-load', () => {
+    const loadTime = Date.now() - startupTime
+    console.log(`Window loaded time: ${loadTime}ms`)
+    // 发送到渲染进程以便记录
+    mainWindow?.webContents.send('startup-time', loadTime)
   })
 
-  createWindow()
+  // 延迟执行非关键操作
+  setTimeout(() => {
+    // 注册全局快捷键
+    const quickShortcut = process.platform === 'darwin' ? 'Command+Shift+Space' : 'Control+Shift+Space'
+    globalShortcut.register(quickShortcut, () => {
+      windowManager?.toggleQuickWindow()
+    })
+
+    // Default open or close DevTools by F12 in development
+    // and ignore CommandOrControl + R in production.
+    app.on('browser-window-created', (_, window) => {
+      optimizer.watchWindowShortcuts(window)
+    })
+  }, 1000)
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
@@ -149,6 +130,11 @@ app.whenReady().then(() => {
   })
 
   // Setup IPC handlers
+  setupIpcHandlers()
+})
+
+// 将 IPC 处理程序移到单独的函数中
+function setupIpcHandlers() {
   ipcMain.handle('switch-tab', async (_, tab: string) => {
     if (!windowManager) return
 
@@ -173,6 +159,7 @@ app.whenReady().then(() => {
   // 处理网站配置
   ipcMain.handle('get-site-configs', () => {
     if (!windowManager) return []
+    console.log('get-site-configs', windowManager.getSiteConfigs())
     return windowManager.getSiteConfigs()
   })
 
@@ -189,14 +176,22 @@ app.whenReady().then(() => {
 
   // 打开设置窗口
   ipcMain.handle('open-settings', () => {
-    createSettingsWindow()
+    windowManager?.createOrShowSettingsWindow()
   })
 
   // 关闭设置窗口
   ipcMain.handle('close-settings', () => {
-    if (settingsWindow) {
-      settingsWindow.hide()
-    }
+    windowManager?.closeWindow(WindowType.SETTINGS)
+  })
+
+  // 隐藏快捷窗口
+  ipcMain.on('hide-quick-window', () => {
+    windowManager?.closeWindow(WindowType.QUICK)
+  })
+
+  // 打开外部URL
+  ipcMain.handle('open-external-url', async (_, url: string) => {
+    await shell.openExternal(url)
   })
 
   // 监听主题变化
@@ -206,6 +201,18 @@ app.whenReady().then(() => {
       window.webContents.send('system-theme-changed', nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
     });
   });
+
+  // 监听布局变化
+  ipcMain.on('layout-resize', (_, data: { sidebarWidth: number; mainWidth: number }) => {
+    if (windowManager) {
+      windowManager.updateLayout(data.sidebarWidth, data.mainWidth);
+    }
+  });
+}
+
+// 应用退出前注销所有快捷键
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll()
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -219,8 +226,6 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.
-
-bootup()
 
 
 

@@ -1,42 +1,16 @@
-/**
- * Window Manager
- * Manages multiple side views that can be switched from a left panel
- */
-
-import { BrowserWindow, WebContentsView, WebPreferences, screen, nativeTheme } from 'electron'
+import { BrowserWindow, WebContentsView, WebPreferences } from 'electron'
 import Store from 'electron-store'
 import { defaultSites } from '../shared/defaultSites'
 import { SiteConfig } from '../shared/types'
-import { join } from 'path'
-import { is } from '@electron-toolkit/utils'
-import { SideViewManager, SideView } from './SideViewManager'
-import icon from '../../resources/icon.png?asset'
 
-
-export enum WindowType {
-  MAIN = 'main',
-  SETTINGS = 'settings',
-  QUICK = 'quick'
+export interface SideView {
+  id: string
+  view: WebContentsView
+  title: string
+  isLoaded: boolean
 }
 
-interface WindowConfig {
-  width: number
-  height: number
-  titleBarStyle?: 'hidden' | 'default'
-  frame?: boolean
-  transparent?: boolean
-  resizable?: boolean
-  alwaysOnTop?: boolean
-  minimizable?: boolean
-  maximizable?: boolean
-  backgroundColor?: string
-  webPreferences?: WebPreferences
-}
-
-export class WindowManager {
-  private windows: Map<WindowType, BrowserWindow> = new Map()
-  private sideViewManager: SideViewManager
-  private mainWindow: BrowserWindow | null = null
+export class SideViewManager {
   private sideViews: Map<string, SideView> = new Map()
   private currentViewId: string | null = null
   private readonly TITLEBAR_HEIGHT = 48
@@ -44,10 +18,9 @@ export class WindowManager {
   private sidebarWidth = 240
   private siteConfigs: Map<string, SiteConfig> = new Map()
   private store: Store
+  private mainWindow: BrowserWindow
 
   constructor(mainWindow: BrowserWindow) {
-    this.windows.set(WindowType.MAIN, mainWindow)
-    this.sideViewManager = new SideViewManager(mainWindow)
     this.mainWindow = mainWindow
     this.store = new Store()
 
@@ -58,157 +31,11 @@ export class WindowManager {
     } else {
       this.setSiteConfigs(defaultSites)
     }
-
-    // 监听窗口大小变化
-    mainWindow.on('resize', () => {
-      this.sideViewManager.updateViewBounds()
-    })
-  }
-
-  // 创建或显示设置窗口
-  createOrShowSettingsWindow(): BrowserWindow {
-    let settingsWindow = this.windows.get(WindowType.SETTINGS)
-
-    if (settingsWindow) {
-      settingsWindow.show()
-      return settingsWindow
-    }
-
-    const config: WindowConfig = {
-      width: 480,
-      height: 500,
-      titleBarStyle: 'hidden',
-      resizable: false,
-      minimizable: false,
-      maximizable: false,
-      alwaysOnTop: true,
-      backgroundColor: nativeTheme.shouldUseDarkColors ? '#1e1e2a' : '#ffffff',
-      webPreferences: {
-        preload: join(__dirname, '../preload/index.js'),
-        sandbox: false,
-        nodeIntegration: true,
-        contextIsolation: true,
-      }
-    }
-
-    settingsWindow = this.createWindow(WindowType.SETTINGS, config)
-
-    settingsWindow.on('closed', () => {
-      this.windows.delete(WindowType.SETTINGS)
-    })
-
-    // 加载设置页面
-    if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-      settingsWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/settings.html`)
-    } else {
-      settingsWindow.loadFile(join(__dirname, '../renderer/settings.html'))
-    }
-
-    // 等待窗口加载完成后显示
-    settingsWindow.once('ready-to-show', () => {
-      settingsWindow?.show()
-    })
-
-    return settingsWindow
-  }
-
-  // 创建或显示快捷窗口
-  createOrShowQuickWindow(): BrowserWindow {
-    let quickWindow = this.windows.get(WindowType.QUICK)
-
-    if (quickWindow) {
-      this.centerQuickWindow(quickWindow)
-      quickWindow.show()
-      return quickWindow
-    }
-
-    const config: WindowConfig = {
-      width: 600,
-      height: 400,
-      frame: false,
-      transparent: true,
-      resizable: false,
-      webPreferences: {
-        preload: join(__dirname, '../preload/index.js'),
-      }
-    }
-
-    quickWindow = this.createWindow(WindowType.QUICK, config)
-
-    quickWindow.on('blur', () => {
-      quickWindow?.hide()
-    })
-
-    quickWindow.on('closed', () => {
-      this.windows.delete(WindowType.QUICK)
-    })
-
-    // 加载快捷窗口页面
-    if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-      quickWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/quick.html`)
-    } else {
-      quickWindow.loadFile(join(__dirname, '../renderer/quick.html'))
-    }
-
-    // 等待窗口加载完成后显示
-    quickWindow.once('ready-to-show', () => {
-      quickWindow?.show()
-    })
-
-    return quickWindow
-  }
-
-  // 居中显示快捷窗口
-  private centerQuickWindow(window: BrowserWindow) {
-    const primaryDisplay = screen.getPrimaryDisplay()
-    const { width, height } = primaryDisplay.workAreaSize
-
-    window.setPosition(
-      Math.round(width / 2 - 300),
-      Math.round(height / 2 - 200)
-    )
-  }
-
-  // 创建通用窗口的方法
-  private createWindow(type: WindowType, config: WindowConfig): BrowserWindow {
-    const window = new BrowserWindow({
-      ...config,
-      show: false,
-      ...(process.platform === 'linux' ? { icon } : {}),
-      trafficLightPosition: { x: 15, y: 15 },
-      ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {})
-    })
-
-    this.windows.set(type, window)
-    return window
-  }
-
-  // 获取指定类型的窗口
-  getWindow(type: WindowType): BrowserWindow | undefined {
-    return this.windows.get(type)
-  }
-
-  // 关闭指定类型的窗口
-  closeWindow(type: WindowType) {
-    const window = this.windows.get(type)
-    if (window) {
-      window.hide()
-    }
-  }
-
-  // 切换快捷窗口显示状态
-  toggleQuickWindow() {
-    const quickWindow = this.windows.get(WindowType.QUICK)
-    if (quickWindow?.isVisible()) {
-      quickWindow.hide()
-    } else {
-      this.createOrShowQuickWindow()
-    }
   }
 
   updateSidebarWidth(width: number) {
     this.sidebarWidth = width
-    this.sideViewManager.updateSidebarWidth(width)
+    this.updateViewBounds()
   }
 
   setSiteConfigs(configs: SiteConfig[]) {
@@ -218,7 +45,6 @@ export class WindowManager {
     }
     // 保存到存储
     this.store.set('siteConfigs', configs)
-    this.sideViewManager.setSiteConfigs(configs)
   }
 
   getSiteConfigs(): SiteConfig[] {
@@ -226,8 +52,6 @@ export class WindowManager {
   }
 
   createSideView(id: string, title: string, options?: { webPreferences?: WebPreferences }): SideView {
-    if (!this.mainWindow) throw new Error('Main window not initialized')
-
     // 如果视图已存在，直接返回
     const existingView = this.sideViews.get(id)
     if (existingView) {
@@ -265,8 +89,6 @@ export class WindowManager {
       { urls: ['*://*.deepseek.com/*', '*://*.deepseek.ai/*'] },
       (details, callback) => {
         const { requestHeaders } = details
-
-        // 设置新的请求头
         const newHeaders = {
           ...requestHeaders,
           'User-Agent': userAgent,
@@ -284,7 +106,6 @@ export class WindowManager {
           'Sec-Fetch-User': '?1',
           'Upgrade-Insecure-Requests': '1'
         }
-
         callback({ requestHeaders: newHeaders })
       }
     )
@@ -345,10 +166,6 @@ export class WindowManager {
   }
 
   private calculateViewBounds(): { x: number; y: number; width: number; height: number } {
-    if (!this.mainWindow) {
-      return { x: 0, y: 0, width: 0, height: 0 }
-    }
-
     const contentBounds = this.mainWindow.getContentBounds()
 
     // 确保宽度和高度至少为1，避免无效的尺寸
@@ -364,8 +181,6 @@ export class WindowManager {
   }
 
   showSideView(id: string) {
-    if (!this.mainWindow) return
-
     const sideView = this.sideViews.get(id)
     if (sideView) {
       // 移除当前视图的显示（但不销毁）
@@ -395,8 +210,6 @@ export class WindowManager {
   }
 
   closeSideView(id: string) {
-    if (!this.mainWindow) return
-
     const sideView = this.sideViews.get(id)
     if (sideView) {
       if (this.currentViewId === id) {
@@ -416,30 +229,13 @@ export class WindowManager {
     return this.currentViewId ? this.sideViews.get(this.currentViewId) || null : null
   }
 
-  getMainWindow(): BrowserWindow | null {
-    return this.mainWindow
-  }
-
   updateViewBounds() {
-    if (!this.mainWindow || !this.currentViewId) return
+    if (!this.currentViewId) return
 
     const currentView = this.sideViews.get(this.currentViewId)
     if (currentView) {
       const bounds = this.calculateViewBounds()
       currentView.view.setBounds(bounds)
-    }
-  }
-
-  updateLayout(sidebarWidth: number, mainWidth: number) {
-    this.sidebarWidth = sidebarWidth;
-
-    // 更新当前视图的边界
-    if (this.currentViewId) {
-      const currentView = this.sideViews.get(this.currentViewId);
-      if (currentView) {
-        const bounds = this.calculateViewBounds();
-        currentView.view.setBounds(bounds);
-      }
     }
   }
 }

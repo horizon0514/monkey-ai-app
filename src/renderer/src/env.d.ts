@@ -13,6 +13,8 @@ declare global {
       setTheme: (theme: Theme) => Promise<void>;
       getTheme: () => Promise<Theme>;
       getEffectiveTheme: () => Promise<'light' | 'dark'>;
+      hideQuickWindow: () => void;
+      openExternalUrl: (url: string) => Promise<void>;
       ipcRenderer: {
         send: (channel: string, data: unknown) => void;
         on: (channel: string, func: (event: unknown, ...args: unknown[]) => void) => void;

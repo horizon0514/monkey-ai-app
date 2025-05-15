@@ -13,11 +13,21 @@ asarUnpack:
   - resources/**
 win:
   executableName: ChatMonkey
+  target:
+    - target: nsis
+      arch:
+        - x64
+  requestedExecutionLevel: asInvoker
+  signAndEditExecutable: false
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
+  artifactName: ${name}_${version}_setup_${arch}.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+  oneClick: true
+  perMachine: false
+  allowToChangeInstallationDirectory: false
+  deleteAppDataOnUninstall: false
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
@@ -41,3 +51,6 @@ npmRebuild: false
 publish:
   provider: generic
   url: https://example.com/auto-updates
+asar: true
+compression: maximum
+removePackageScripts: true

@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import './assets/index.css'
+import './assets/global.css'
 import { SettingsModal } from './components/SettingsModal'
 
 // 应用主题
