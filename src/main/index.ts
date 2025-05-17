@@ -205,7 +205,7 @@ function setupIpcHandlers() {
   // 监听布局变化
   ipcMain.on('layout-resize', (_, data: { sidebarWidth: number; mainWidth: number }) => {
     if (windowManager) {
-      windowManager.updateLayout(data.sidebarWidth, data.mainWidth);
+      windowManager.updateLayout(data.sidebarWidth);
     }
   });
 }

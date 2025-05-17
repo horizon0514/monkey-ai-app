@@ -204,6 +204,26 @@ export class WindowManager {
     this.sideViewManager.updateSidebarWidth(width)
   }
 
+  getSidebarWidth(): number {
+    return this.sideViewManager.getSidebarWidth()
+  }
+
+  getLastSidebarWidth(): number {
+    return this.sideViewManager.getLastSidebarWidth()
+  }
+
+  isCollapsedSidebar(): boolean {
+    return this.sideViewManager.isCollapsedSidebar()
+  }
+
+  toggleSidebar() {
+    this.sideViewManager.toggleSidebar()
+  }
+
+  updateLayout(sidebarWidth: number) {
+    this.sideViewManager.updateSidebarWidth(sidebarWidth)
+  }
+
   setSiteConfigs(configs: SiteConfig[]) {
     this.store.set('siteConfigs', configs)
     this.sideViewManager.setSiteConfigs(configs)
@@ -235,9 +255,5 @@ export class WindowManager {
 
   getMainWindow(): BrowserWindow | null {
     return this.mainWindow
-  }
-
-  updateLayout(sidebarWidth: number, mainWidth: number) {
-    this.sideViewManager.updateSidebarWidth(sidebarWidth)
   }
 }

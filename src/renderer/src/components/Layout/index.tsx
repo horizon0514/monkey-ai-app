@@ -3,8 +3,9 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@renderer/
 import { Titlebar } from '../Titlebar';
 import { cn } from '@renderer/lib/utils';
 
-const MIN_SIDEBAR_SIZE = 15; // 最小宽度百分比
-const DEFAULT_SIDEBAR_SIZE = 18; // 默认宽度百分比
+const MIN_SIDEBAR_WIDTH = 200; // 最小宽度（像素）
+const MAX_SIDEBAR_WIDTH = 400; // 最大宽度（像素）
+const DEFAULT_SIDEBAR_WIDTH = 240; // 默认宽度（像素）
 
 interface LayoutProps {
   sidebar?: React.ReactNode;
@@ -14,8 +15,13 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ sidebar, topbar, children, onSidebarCollapsedChange }) => {
-  const [sidebarSize, setSidebarSize] = useState(DEFAULT_SIDEBAR_SIZE);
-  const [lastSidebarSize, setLastSidebarSize] = useState(DEFAULT_SIDEBAR_SIZE);
+  // Convert pixel width to percentage based on window width
+  const pixelToPercentage = useCallback((pixels: number) => {
+    return (pixels / window.innerWidth) * 100;
+  }, []);
+
+  const [sidebarSize, setSidebarSize] = useState(pixelToPercentage(DEFAULT_SIDEBAR_WIDTH));
+  const [lastSidebarSize, setLastSidebarSize] = useState(pixelToPercentage(DEFAULT_SIDEBAR_WIDTH));
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // 处理侧边栏大小变化
@@ -29,11 +35,13 @@ export const Layout: React.FC<LayoutProps> = ({ sidebar, topbar, children, onSid
   // 当侧边栏大小改变时通知主进程
   useEffect(() => {
     const sidebarWidth = Math.floor((window.innerWidth * sidebarSize) / 100);
-    const mainWidth = window.innerWidth - (isSidebarCollapsed ? 0 : sidebarWidth);
+    // Ensure the width is within bounds
+    const boundedWidth = Math.max(MIN_SIDEBAR_WIDTH, Math.min(sidebarWidth, MAX_SIDEBAR_WIDTH));
+    const mainWidth = window.innerWidth - (isSidebarCollapsed ? 0 : boundedWidth);
 
     // 通知主进程更新侧边栏和主内容区域的宽度
     window.electron.ipcRenderer.send('layout-resize', {
-      sidebarWidth: isSidebarCollapsed ? 0 : sidebarWidth,
+      sidebarWidth: isSidebarCollapsed ? 0 : boundedWidth,
       mainWidth
     });
   }, [sidebarSize, isSidebarCollapsed]);
@@ -93,8 +101,8 @@ export const Layout: React.FC<LayoutProps> = ({ sidebar, topbar, children, onSid
       >
         <ResizablePanel
           defaultSize={isSidebarCollapsed ? 0 : sidebarSize}
-          minSize={isSidebarCollapsed ? 0 : MIN_SIDEBAR_SIZE}
-          maxSize={isSidebarCollapsed ? 0 : 30}
+          minSize={isSidebarCollapsed ? 0 : pixelToPercentage(MIN_SIDEBAR_WIDTH)}
+          maxSize={isSidebarCollapsed ? 0 : pixelToPercentage(MAX_SIDEBAR_WIDTH)}
           className={cn("min-h-full", isSidebarCollapsed && "hidden")}
         >
           <div className="flex h-full flex-col">
