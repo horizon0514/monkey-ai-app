@@ -24,7 +24,7 @@ export const Titlebar: React.FC<TitlebarProps> = ({ onToggleSidebar, isSidebarCo
     <div
       className={cn(
         "h-12 flex items-center bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40",
-        isMacOS && !isSidebarCollapsed && "justify-center",
+        isMacOS && !isSidebarCollapsed && "justify-start",
         isSidebarCollapsed ? "w-auto px-2" : "w-full"
       )}
       style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}

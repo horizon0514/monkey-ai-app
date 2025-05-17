@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@renderer/components/ui/resizable';
 import { Titlebar } from '../Titlebar';
 import { cn } from '@renderer/lib/utils';
@@ -6,6 +6,18 @@ import { cn } from '@renderer/lib/utils';
 const MIN_SIDEBAR_WIDTH = 200; // 最小宽度（像素）
 const MAX_SIDEBAR_WIDTH = 400; // 最大宽度（像素）
 const DEFAULT_SIDEBAR_WIDTH = 240; // 默认宽度（像素）
+
+// 自定义 ResizableHandle 组件
+const CustomResizeHandle = () => {
+  return (
+    <ResizableHandle className="relative group">
+      {/* 实际的分隔线 */}
+      <div className="absolute top-0 left-1/2 h-full w-[1px] bg-border transform -translate-x-1/2" />
+      {/* 扩大的交互区域 */}
+      <div className="absolute top-0 left-1/2 h-full w-4 transform -translate-x-1/2 cursor-col-resize hover:bg-accent/10 transition-colors" />
+    </ResizableHandle>
+  );
+};
 
 interface LayoutProps {
   sidebar?: React.ReactNode;
@@ -23,31 +35,58 @@ export const Layout: React.FC<LayoutProps> = ({ sidebar, topbar, children, onSid
   const [sidebarSize, setSidebarSize] = useState(pixelToPercentage(DEFAULT_SIDEBAR_WIDTH));
   const [lastSidebarSize, setLastSidebarSize] = useState(pixelToPercentage(DEFAULT_SIDEBAR_WIDTH));
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const lastUpdateTime = useRef(0);
+  const pendingUpdate = useRef<number | null>(null);
+
+  // 使用节流发送更新
+  const sendUpdate = useCallback((width: number, isCollapsed: boolean) => {
+    const now = Date.now();
+    if (now - lastUpdateTime.current >= 16) { // 约一帧的时间
+      const mainWidth = window.innerWidth - (isCollapsed ? 0 : width);
+      window.electron.ipcRenderer.send('layout-resize', {
+        sidebarWidth: isCollapsed ? 0 : width,
+        mainWidth
+      });
+      lastUpdateTime.current = now;
+    } else if (!pendingUpdate.current) {
+      pendingUpdate.current = requestAnimationFrame(() => {
+        const mainWidth = window.innerWidth - (isCollapsed ? 0 : width);
+        window.electron.ipcRenderer.send('layout-resize', {
+          sidebarWidth: isCollapsed ? 0 : width,
+          mainWidth
+        });
+        lastUpdateTime.current = Date.now();
+        pendingUpdate.current = null;
+      });
+    }
+  }, []);
 
   // 处理侧边栏大小变化
   const handleSidebarResize = useCallback((sizes: number[]) => {
     if (!isSidebarCollapsed && sizes[0] > 0) {
       setSidebarSize(sizes[0]);
       setLastSidebarSize(sizes[0]);
+
+      // 计算实际像素宽度并确保在边界内
+      const sidebarWidth = Math.floor((window.innerWidth * sizes[0]) / 100);
+      const boundedWidth = Math.max(MIN_SIDEBAR_WIDTH, Math.min(sidebarWidth, MAX_SIDEBAR_WIDTH));
+
+      // 使用节流发送更新
+      sendUpdate(boundedWidth, isSidebarCollapsed);
     }
-  }, [isSidebarCollapsed]);
+  }, [isSidebarCollapsed, sendUpdate]);
 
-  // 当侧边栏大小改变时通知主进程
+  // 清理 RAF
   useEffect(() => {
-    const sidebarWidth = Math.floor((window.innerWidth * sidebarSize) / 100);
-    // Ensure the width is within bounds
-    const boundedWidth = Math.max(MIN_SIDEBAR_WIDTH, Math.min(sidebarWidth, MAX_SIDEBAR_WIDTH));
-    const mainWidth = window.innerWidth - (isSidebarCollapsed ? 0 : boundedWidth);
-
-    // 通知主进程更新侧边栏和主内容区域的宽度
-    window.electron.ipcRenderer.send('layout-resize', {
-      sidebarWidth: isSidebarCollapsed ? 0 : boundedWidth,
-      mainWidth
-    });
-  }, [sidebarSize, isSidebarCollapsed]);
+    return () => {
+      if (pendingUpdate.current) {
+        cancelAnimationFrame(pendingUpdate.current);
+      }
+    };
+  }, []);
 
   // 处理折叠状态变化
-  const handleToggleCollapse = () => {
+  const handleToggleCollapse = useCallback(() => {
     if (!isSidebarCollapsed) {
       // 折叠时保存当前宽度
       setLastSidebarSize(sidebarSize);
@@ -57,7 +96,7 @@ export const Layout: React.FC<LayoutProps> = ({ sidebar, topbar, children, onSid
       setSidebarSize(lastSidebarSize);
     }
     setIsSidebarCollapsed(!isSidebarCollapsed);
-  };
+  }, [isSidebarCollapsed, sidebarSize, lastSidebarSize]);
 
   // 暴露折叠状态变化的回调
   useEffect(() => {
@@ -96,7 +135,7 @@ export const Layout: React.FC<LayoutProps> = ({ sidebar, topbar, children, onSid
       </div>
       <ResizablePanelGroup
         direction="horizontal"
-        className="flex-1"
+        className="flex-1 [&>div[role=separator]]:w-2 [&>div[role=separator]]:bg-transparent [&>div[role=separator]]:hover:bg-accent/10 [&>div[role=separator]]:transition-colors"
         onLayout={handleSidebarResize}
       >
         <ResizablePanel
@@ -109,7 +148,11 @@ export const Layout: React.FC<LayoutProps> = ({ sidebar, topbar, children, onSid
             {sidebar}
           </div>
         </ResizablePanel>
-        {!isSidebarCollapsed && <ResizableHandle />}
+        {!isSidebarCollapsed && (
+          <ResizableHandle>
+            <div className="absolute top-0 left-1/2 h-full w-[1px] bg-border transform -translate-x-1/2" />
+          </ResizableHandle>
+        )}
         <ResizablePanel
           defaultSize={isSidebarCollapsed ? 100 : 100 - sidebarSize}
           minSize={30}
