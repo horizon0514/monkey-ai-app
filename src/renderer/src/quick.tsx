@@ -2,26 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import QuickWindow from './components/QuickWindow'
 import './assets/index.css'
-// 应用主题
-function applyTheme(theme: string) {
-  const root = document.documentElement;
-  if (theme === 'dark') {
-    root.classList.add('dark');
-  } else {
-    root.classList.remove('dark');
-  }
-}
-
-// 初始化主题
-window.electron.getEffectiveTheme().then((theme) => {
-  applyTheme(theme);
-});
-
-// 监听系统主题变化
-window.electron.ipcRenderer.on('system-theme-changed', (_, args) => {
-  const theme = args as string;
-  applyTheme(theme);
-});
+import { ThemeProvider } from './components/ThemeProvider';
 
 // 监听窗口显示事件，自动聚焦输入框
 window.electron.ipcRenderer.on('quick-window-shown', () => {
@@ -43,6 +24,8 @@ document.addEventListener('keydown', (event) => {
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <QuickWindow />
+    <ThemeProvider>
+      <QuickWindow />
+    </ThemeProvider>
   </React.StrictMode>
 )

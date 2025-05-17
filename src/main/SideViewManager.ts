@@ -172,6 +172,16 @@ export class SideViewManager {
     const width = Math.max(1, contentBounds.width - this.sidebarWidth - this.RESIZE_HANDLE_WIDTH)
     const height = Math.max(1, contentBounds.height - this.TITLEBAR_HEIGHT)
 
+    console.log('this.sidebarWidth', this.sidebarWidth)
+    console.log('width', width)
+    if (this.sidebarWidth === 0) {
+      return {
+        x: 0,
+        y: this.TITLEBAR_HEIGHT,
+        width: width + 1,
+        height
+      }
+    }
     return {
       x: this.sidebarWidth + this.RESIZE_HANDLE_WIDTH,
       y: this.TITLEBAR_HEIGHT,

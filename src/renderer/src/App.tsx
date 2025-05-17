@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import { defaultSites } from '../../shared/defaultSites';
 import { SiteConfig } from '../../shared/types';
 import { Topbar } from './components/Topbar';
-import { ThemeProvider } from './components/ThemeProvider';
 
 function App() {
   const [sites, setSites] = useState<SiteConfig[]>(defaultSites);
@@ -42,7 +41,6 @@ function App() {
   const enabledSites = sites.filter(site => site.enabled);
 
   return (
-    <ThemeProvider defaultTheme="light" storageKey="monkey-ui-theme">
       <Layout
         sidebar={
           <Sidebar
@@ -56,7 +54,6 @@ function App() {
       >
         <MainContent selectedTab={selectedTab} />
       </Layout>
-    </ThemeProvider>
   );
 }
 
