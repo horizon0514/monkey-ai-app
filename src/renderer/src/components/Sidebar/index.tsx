@@ -24,6 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   value,
   sites
 }) => {
+  const currentValue = sites.some(s => s.id === value) ? value : sites[0]?.id || ''
   const handleSettingsClick = () => {
     window.electron.openSettings()
   }
@@ -37,7 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </p>
         </div>
         <Tabs
-          value={value}
+          value={currentValue}
           onValueChange={onTabChange}
           orientation='vertical'
           className='h-full'
@@ -49,6 +50,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <TabsTrigger
                   key={site.id}
                   value={site.id}
+                  onMouseDown={() => {
+                    if (currentValue === site.id) {
+                      window.electron.switchTab(site.id)
+                    }
+                  }}
                   className='group relative justify-start gap-3 px-4 py-2.5 text-sm font-medium transition-all no-drag hover:bg-muted/50 data-[state=active]:bg-primary/10 data-[state=active]:text-primary'
                 >
                   <Icon

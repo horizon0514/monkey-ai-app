@@ -7,7 +7,8 @@ interface MainContentProps {
 export const MainContent: React.FC<MainContentProps> = ({ selectedTab }) => {
   useEffect(() => {
     window.electron.switchTab(selectedTab)
-  }, [selectedTab])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return <main className='flex-1 overflow-hidden' />
 }
