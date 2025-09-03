@@ -23,16 +23,29 @@ type SettingsProps = {
   onClose?: () => void
 }
 
-export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose }) => {
+export const SettingsModal: React.FC<SettingsProps> = ({
+  inline = false,
+  onClose
+}) => {
   const isMacOS = window.platform.os === 'darwin'
   const [currentTheme, setCurrentTheme] = useState<Theme>('system')
   const [sites, setSites] = useState<SiteConfig[]>(defaultSites)
-  const [activeSection, setActiveSection] = useState<'appearance' | 'assistants' | 'about'>('appearance')
+  const [activeSection, setActiveSection] = useState<
+    'appearance' | 'assistants' | 'about'
+  >('appearance')
   const [search, setSearch] = useState('')
   const [isAdding, setIsAdding] = useState(false)
-  const [addingDraft, setAddingDraft] = useState<{ title: string; url: string; external: boolean }>({ title: '', url: '', external: false })
+  const [addingDraft, setAddingDraft] = useState<{
+    title: string
+    url: string
+    external: boolean
+  }>({ title: '', url: '', external: false })
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editingDraft, setEditingDraft] = useState<{ title: string; url: string; external: boolean }>({ title: '', url: '', external: false })
+  const [editingDraft, setEditingDraft] = useState<{
+    title: string
+    url: string
+    external: boolean
+  }>({ title: '', url: '', external: false })
 
   const appearanceRef = useRef<HTMLDivElement | null>(null)
   const assistantsRef = useRef<HTMLDivElement | null>(null)
@@ -116,7 +129,13 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
     while (existingIds.has(id)) {
       id = `${idBase}-${i++}`
     }
-    const newSite: SiteConfig = { id, title, url, enabled: true, external: addingDraft.external }
+    const newSite: SiteConfig = {
+      id,
+      title,
+      url,
+      enabled: true,
+      external: addingDraft.external
+    }
     const newSites = [...sites, newSite]
     await commitSites(newSites)
     setIsAdding(false)
@@ -129,7 +148,11 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
   // 编辑助手
   const startEdit = (site: SiteConfig) => {
     setEditingId(site.id)
-    setEditingDraft({ title: site.title, url: site.url, external: Boolean(site.external) })
+    setEditingDraft({
+      title: site.title,
+      url: site.url,
+      external: Boolean(site.external)
+    })
   }
 
   const handleEditSave = async (siteId: string) => {
@@ -137,7 +160,9 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
     const url = editingDraft.url.trim()
     if (!title || !isValidUrl(url)) return
     const newSites = sites.map(s =>
-      s.id === siteId ? { ...s, title, url, external: editingDraft.external } : s
+      s.id === siteId
+        ? { ...s, title, url, external: editingDraft.external }
+        : s
     )
     await commitSites(newSites)
     setEditingId(null)
@@ -157,14 +182,20 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
   const moveUp = async (index: number) => {
     if (index <= 0) return
     const newSites = [...sites]
-    ;[newSites[index - 1], newSites[index]] = [newSites[index], newSites[index - 1]]
+    ;[newSites[index - 1], newSites[index]] = [
+      newSites[index],
+      newSites[index - 1]
+    ]
     await commitSites(newSites)
   }
 
   const moveDown = async (index: number) => {
     if (index >= sites.length - 1) return
     const newSites = [...sites]
-    ;[newSites[index + 1], newSites[index]] = [newSites[index], newSites[index + 1]]
+    ;[newSites[index + 1], newSites[index]] = [
+      newSites[index],
+      newSites[index + 1]
+    ]
     await commitSites(newSites)
   }
 
@@ -210,7 +241,9 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
       <div className='flex min-h-0 flex-1'>
         {/* 左侧分组导航 */}
         <aside className='w-56 shrink-0 border-r border-border/40 p-3'>
-          <div className='mb-2 px-2 text-xs text-muted-foreground'>偏好设置</div>
+          <div className='mb-2 px-2 text-xs text-muted-foreground'>
+            偏好设置
+          </div>
           <nav className='flex flex-col space-y-1'>
             <button
               onClick={() => handleScrollTo('appearance')}
@@ -256,7 +289,10 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
           </div>
 
           {/* 外观 */}
-          <div ref={appearanceRef} className='space-y-3 scroll-mt-6'>
+          <div
+            ref={appearanceRef}
+            className='scroll-mt-6 space-y-3'
+          >
             <h3
               className={cn(
                 'font-medium leading-none',
@@ -265,7 +301,9 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
             >
               主题
             </h3>
-            <p className='text-sm text-muted-foreground'>选择你喜欢的主题外观。</p>
+            <p className='text-sm text-muted-foreground'>
+              选择你喜欢的主题外观。
+            </p>
             <div className='flex items-center space-x-2'>
               <button
                 onClick={() => handleThemeChange('light')}
@@ -292,7 +330,8 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
                 className={cn(
                   'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-input bg-background text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
                   isMacOS ? 'h-8 px-3 py-1.5' : 'h-9 px-4 py-2',
-                  currentTheme === 'system' && 'bg-accent text-accent-foreground'
+                  currentTheme === 'system' &&
+                    'bg-accent text-accent-foreground'
                 )}
               >
                 <Monitor size={16} /> 跟随系统
@@ -301,7 +340,10 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
           </div>
 
           {/* AI 助手 */}
-          <div ref={assistantsRef} className='mt-8 space-y-3 scroll-mt-6'>
+          <div
+            ref={assistantsRef}
+            className='mt-8 scroll-mt-6 space-y-3'
+          >
             <h3
               className={cn(
                 'font-medium leading-none',
@@ -310,7 +352,9 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
             >
               AI 助手
             </h3>
-            <p className='text-sm text-muted-foreground'>自定义你想要使用的助手（名称、URL、启用状态、顺序）。</p>
+            <p className='text-sm text-muted-foreground'>
+              自定义你想要使用的助手（名称、URL、启用状态、顺序）。
+            </p>
 
             {/* 新增按钮 */}
             {!isAdding ? (
@@ -330,13 +374,17 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
                 <div className='flex gap-2'>
                   <input
                     value={addingDraft.title}
-                    onChange={e => setAddingDraft(d => ({ ...d, title: e.target.value }))}
+                    onChange={e =>
+                      setAddingDraft(d => ({ ...d, title: e.target.value }))
+                    }
                     placeholder='名称（必填）'
                     className='flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring'
                   />
                   <input
                     value={addingDraft.url}
-                    onChange={e => setAddingDraft(d => ({ ...d, url: e.target.value }))}
+                    onChange={e =>
+                      setAddingDraft(d => ({ ...d, url: e.target.value }))
+                    }
                     placeholder='https://example.com/'
                     className='flex-[2] rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring'
                   />
@@ -346,10 +394,20 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
                     id='adding-external'
                     type='checkbox'
                     checked={addingDraft.external}
-                    onChange={e => setAddingDraft(d => ({ ...d, external: e.target.checked }))}
+                    onChange={e =>
+                      setAddingDraft(d => ({
+                        ...d,
+                        external: e.target.checked
+                      }))
+                    }
                     className='h-4 w-4 rounded border-border text-primary focus:ring-primary'
                   />
-                  <label htmlFor='adding-external' className='text-sm text-muted-foreground'>在外部浏览器中打开（适用于不支持内嵌登录的站点，如 Google）</label>
+                  <label
+                    htmlFor='adding-external'
+                    className='text-sm text-muted-foreground'
+                  >
+                    在外部浏览器中打开（适用于不支持内嵌登录的站点，如 Google）
+                  </label>
                 </div>
                 <div className='mt-2 flex justify-end gap-2'>
                   <button
@@ -388,8 +446,12 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
                           />
                         </div>
                         <div className='min-w-0 flex-1'>
-                          <div className='truncate text-sm font-medium'>{site.title}</div>
-                          <div className='truncate text-xs text-muted-foreground'>{site.url}</div>
+                          <div className='truncate text-sm font-medium'>
+                            {site.title}
+                          </div>
+                          <div className='truncate text-xs text-muted-foreground'>
+                            {site.url}
+                          </div>
                         </div>
                         <div className='flex items-center gap-1'>
                           <button
@@ -418,7 +480,10 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
                             className='rounded-md p-1 hover:bg-destructive/10'
                             title='删除'
                           >
-                            <Trash2 size={16} className='text-destructive' />
+                            <Trash2
+                              size={16}
+                              className='text-destructive'
+                            />
                           </button>
                         </div>
                       </div>
@@ -428,13 +493,23 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
                           <div className='flex gap-2'>
                             <input
                               value={editingDraft.title}
-                              onChange={e => setEditingDraft(d => ({ ...d, title: e.target.value }))}
+                              onChange={e =>
+                                setEditingDraft(d => ({
+                                  ...d,
+                                  title: e.target.value
+                                }))
+                              }
                               placeholder='名称（必填）'
                               className='flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring'
                             />
                             <input
                               value={editingDraft.url}
-                              onChange={e => setEditingDraft(d => ({ ...d, url: e.target.value }))}
+                              onChange={e =>
+                                setEditingDraft(d => ({
+                                  ...d,
+                                  url: e.target.value
+                                }))
+                              }
                               placeholder='https://example.com/'
                               className='flex-[2] rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring'
                             />
@@ -444,10 +519,20 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
                               id={`external-${site.id}`}
                               type='checkbox'
                               checked={editingDraft.external}
-                              onChange={e => setEditingDraft(d => ({ ...d, external: e.target.checked }))}
+                              onChange={e =>
+                                setEditingDraft(d => ({
+                                  ...d,
+                                  external: e.target.checked
+                                }))
+                              }
                               className='h-4 w-4 rounded border-border text-primary focus:ring-primary'
                             />
-                            <label htmlFor={`external-${site.id}`} className='text-sm text-muted-foreground'>在外部浏览器中打开</label>
+                            <label
+                              htmlFor={`external-${site.id}`}
+                              className='text-sm text-muted-foreground'
+                            >
+                              在外部浏览器中打开
+                            </label>
                           </div>
                         </div>
                         <div className='flex items-center gap-1'>
@@ -472,13 +557,18 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
                 )
               })}
               {filteredSites.length === 0 && (
-                <div className='py-6 text-center text-sm text-muted-foreground'>没有匹配的助手</div>
+                <div className='py-6 text-center text-sm text-muted-foreground'>
+                  没有匹配的助手
+                </div>
               )}
             </div>
           </div>
 
           {/* 关于 */}
-          <div ref={aboutRef} className='mt-8 space-y-3 scroll-mt-6'>
+          <div
+            ref={aboutRef}
+            className='mt-8 scroll-mt-6 space-y-3'
+          >
             <h3
               className={cn(
                 'font-medium leading-none',
@@ -491,7 +581,7 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
           </div>
 
           {/* 底部操作条 */}
-          <div className='sticky bottom-0 mt-10 -mx-6 border-t border-border/40 bg-gradient-to-t from-background to-background/70 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
+          <div className='sticky bottom-0 -mx-6 mt-10 border-t border-border/40 bg-gradient-to-t from-background to-background/70 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
             <div className='flex items-center justify-end gap-2'>
               <button
                 onClick={async () => {
@@ -556,7 +646,9 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
                 恢复默认
               </button>
               <button
-                onClick={() => (onClose ? onClose() : window.electron.closeSettings())}
+                onClick={() =>
+                  onClose ? onClose() : window.electron.closeSettings()
+                }
                 className={cn(
                   'inline-flex items-center justify-center whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
                 )}

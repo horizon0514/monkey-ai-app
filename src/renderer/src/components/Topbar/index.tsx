@@ -22,13 +22,20 @@ export const Topbar: React.FC<TopbarProps> = ({ tab, title }) => {
       setCanGoForward(Boolean((state as any)?.canGoForward))
     }
     update()
-    const handler = (_: unknown, payload: { canGoBack: boolean; canGoForward: boolean }) => {
-      setCanGoBack(Boolean(payload?.canGoBack))
-      setCanGoForward(Boolean(payload?.canGoForward))
+    const handler = (_: unknown, payload: unknown) => {
+      const p = (payload || {}) as {
+        canGoBack?: boolean
+        canGoForward?: boolean
+      }
+      setCanGoBack(Boolean(p.canGoBack))
+      setCanGoForward(Boolean(p.canGoForward))
     }
     window.electron.ipcRenderer.on('navigation-state-changed', handler)
     return () => {
-      window.electron.ipcRenderer.removeListener('navigation-state-changed', handler)
+      window.electron.ipcRenderer.removeListener(
+        'navigation-state-changed',
+        handler
+      )
     }
   }, [])
 
@@ -70,7 +77,10 @@ export const Topbar: React.FC<TopbarProps> = ({ tab, title }) => {
             }
           }}
         >
-          <ExternalLink size={18} className='text-muted-foreground' />
+          <ExternalLink
+            size={18}
+            className='text-muted-foreground'
+          />
         </Button>
       </div>
       <div className='px-2 no-drag'>

@@ -15,6 +15,13 @@ declare global {
       getEffectiveTheme: () => Promise<'light' | 'dark'>
       hideQuickWindow: () => void
       openExternalUrl: (url: string) => Promise<void>
+      getNavigationState: () => Promise<{
+        canGoBack: boolean
+        canGoForward: boolean
+      }>
+      goBack: () => Promise<void>
+      goForward: () => Promise<void>
+      getCurrentUrl: () => Promise<string | null>
       ipcRenderer: {
         send: (channel: string, data: unknown) => void
         on: (

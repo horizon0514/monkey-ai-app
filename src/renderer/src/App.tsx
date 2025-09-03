@@ -88,7 +88,10 @@ function App() {
       onSidebarCollapsedChange={setIsSidebarCollapsed}
     >
       {showSettings ? (
-        <SettingsModal inline onClose={() => setShowSettings(false)} />
+        <SettingsModal
+          inline
+          onClose={() => setShowSettings(false)}
+        />
       ) : (
         <MainContent selectedTab={selectedTab} />
       )}
