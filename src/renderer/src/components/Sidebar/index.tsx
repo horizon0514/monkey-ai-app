@@ -73,10 +73,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </TabsList>
         </Tabs>
       </div>
-      <div className='p-2'>
+      <div className='p-2 app-region-no-drag'>
         <button
           onClick={handleSettingsClick}
-          className='flex w-full items-center gap-3 rounded-md px-4 py-2.5 text-sm font-medium text-muted-foreground no-drag hover:bg-muted/50 hover:text-foreground/90'
+          className='flex w-full items-center gap-3 rounded-md px-4 py-2.5 text-sm font-medium text-muted-foreground no-drag app-region-no-drag hover:bg-muted/50 hover:text-foreground/90'
         >
           <Settings
             size={18}
