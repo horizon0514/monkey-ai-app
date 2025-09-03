@@ -172,6 +172,7 @@ export const Layout: React.FC<LayoutProps> = ({
         </div>
       </div>
       <ResizablePanelGroup
+        key={isSidebarCollapsed ? 'collapsed' : 'expanded'}
         direction='horizontal'
         className='flex-1 [&>div[role=separator]]:w-2 [&>div[role=separator]]:bg-transparent [&>div[role=separator]]:transition-colors [&>div[role=separator]]:hover:bg-accent/10'
         onLayout={handleSidebarResize}
