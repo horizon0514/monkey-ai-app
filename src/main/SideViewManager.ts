@@ -365,6 +365,21 @@ export class SideViewManager {
     }
   }
 
+  hideCurrentView() {
+    if (!this.currentViewId) return
+    const currentView = this.sideViews.get(this.currentViewId)
+    if (!currentView) {
+      this.currentViewId = null
+      return
+    }
+    try {
+      this.mainWindow.contentView.removeChildView(currentView.view)
+    } catch (error) {
+      // Ignore removal errors
+    }
+    this.currentViewId = null
+  }
+
   closeSideView(id: string) {
     const sideView = this.sideViews.get(id)
     if (!sideView) return

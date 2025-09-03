@@ -187,11 +187,13 @@ function setupIpcHandlers() {
 
   // 打开设置窗口
   ipcMain.handle('open-settings', () => {
-    windowManager?.createOrShowSettingsWindow()
+    // 内嵌设置模式：隐藏当前 WebContentsView，由渲染进程展示设置页
+    windowManager?.hideCurrentView()
   })
 
   // 关闭设置窗口
   ipcMain.handle('close-settings', () => {
+    // 兼容：如果存在独立设置窗口则关闭；内嵌模式无需处理
     windowManager?.closeWindow(WindowType.SETTINGS)
   })
 

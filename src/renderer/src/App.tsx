@@ -59,7 +59,10 @@ function App() {
             window.electron.switchTab(tab)
           }}
           sites={enabledSites}
-          onOpenSettings={() => setShowSettings(true)}
+          onOpenSettings={() => {
+            window.electron.openSettings()
+            setShowSettings(true)
+          }}
         />
       }
       topbar={
