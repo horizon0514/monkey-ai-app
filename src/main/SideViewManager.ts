@@ -308,8 +308,6 @@ export class SideViewManager {
       }
     }
 
-
-
     return {
       x: this.sidebarWidth + UI_CONSTANTS.RESIZE_HANDLE_WIDTH,
       y: UI_CONSTANTS.TITLEBAR_HEIGHT,
@@ -327,7 +325,10 @@ export class SideViewManager {
 
     // 即使有错误也显示视图，让用户看到错误页面
     if (sideView.error) {
-      console.warn(`Side view ${id} has error, but still showing:`, sideView.error)
+      console.warn(
+        `Side view ${id} has error, but still showing:`,
+        sideView.error
+      )
     }
 
     try {
