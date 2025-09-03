@@ -310,8 +310,7 @@ export class SideViewManager {
       }
     }
 
-    console.log('this.sidebarWidth', this.sidebarWidth)
-    console.log('width', width)
+
 
     return {
       x: this.sidebarWidth + UI_CONSTANTS.RESIZE_HANDLE_WIDTH,
@@ -323,21 +322,19 @@ export class SideViewManager {
 
   showSideView(id: string) {
     const sideView = this.sideViews.get(id)
-    if (!sideView || sideView.error) {
-      console.error(`Failed to show side view ${id}:`, sideView?.error)
+    if (!sideView) {
+      console.error(`Side view ${id} not found`)
       return
     }
 
+    // 即使有错误也显示视图，让用户看到错误页面
+    if (sideView.error) {
+      console.warn(`Side view ${id} has error, but still showing:`, sideView.error)
+    }
+
     try {
-      // 如果点击的是当前视图，则切换为隐藏（移除视图）
+      // 如果点击的是当前已显示的视图，直接返回（不做任何操作）
       if (this.currentViewId === id) {
-        const currentView = this.sideViews.get(this.currentViewId)
-        if (currentView) {
-          try {
-            this.mainWindow.contentView.removeChildView(currentView.view)
-          } catch {}
-        }
-        this.currentViewId = null
         return
       }
 
@@ -347,7 +344,9 @@ export class SideViewManager {
         if (currentView) {
           try {
             this.mainWindow.contentView.removeChildView(currentView.view)
-          } catch {}
+          } catch (error) {
+            // Ignore removal errors
+          }
         }
       }
 
@@ -375,7 +374,9 @@ export class SideViewManager {
       if (this.currentViewId === id) {
         try {
           this.mainWindow.contentView.removeChildView(sideView.view)
-        } catch {}
+        } catch (error) {
+          // Ignore removal errors
+        }
         this.currentViewId = null
       }
 
