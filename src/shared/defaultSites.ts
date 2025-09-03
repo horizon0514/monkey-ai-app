@@ -1,4 +1,4 @@
-import { SiteConfig } from './types';
+import { SiteConfig } from './types'
 
 export const defaultSites: SiteConfig[] = [
   {
@@ -31,4 +31,4 @@ export const defaultSites: SiteConfig[] = [
     url: 'https://www.doubao.com/chat/',
     enabled: true
   }
-];
+]

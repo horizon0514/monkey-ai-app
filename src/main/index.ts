@@ -1,4 +1,11 @@
-import { app, shell, BrowserWindow, ipcMain, nativeTheme, globalShortcut } from 'electron'
+import {
+  app,
+  shell,
+  BrowserWindow,
+  ipcMain,
+  nativeTheme,
+  globalShortcut
+} from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -64,7 +71,7 @@ function createWindow() {
     mainWindow?.show()
   })
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
+  mainWindow.webContents.setWindowOpenHandler(details => {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
@@ -84,7 +91,6 @@ function createWindow() {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 }
-
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -111,7 +117,10 @@ app.whenReady().then(() => {
   // 延迟执行非关键操作
   setTimeout(() => {
     // 注册全局快捷键
-    const quickShortcut = process.platform === 'darwin' ? 'Command+Shift+Space' : 'Control+Shift+Space'
+    const quickShortcut =
+      process.platform === 'darwin'
+        ? 'Command+Shift+Space'
+        : 'Control+Shift+Space'
     globalShortcut.register(quickShortcut, () => {
       windowManager?.toggleQuickWindow()
     })
@@ -138,7 +147,9 @@ function setupIpcHandlers() {
   ipcMain.handle('switch-tab', async (_, tab: string) => {
     if (!windowManager) return
 
-    const siteConfig = windowManager.getSiteConfigs().find(config => config.id === tab)
+    const siteConfig = windowManager
+      .getSiteConfigs()
+      .find(config => config.id === tab)
     if (siteConfig) {
       windowManager.createSideView(siteConfig.id, siteConfig.title, {
         webPreferences: {
@@ -196,18 +207,24 @@ function setupIpcHandlers() {
 
   // 监听主题变化
   nativeTheme.on('updated', () => {
-    const windows = BrowserWindow.getAllWindows();
+    const windows = BrowserWindow.getAllWindows()
     windows.forEach(window => {
-      window.webContents.send('system-theme-changed', nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
-    });
-  });
+      window.webContents.send(
+        'system-theme-changed',
+        nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
+      )
+    })
+  })
 
   // 监听布局变化
-  ipcMain.on('layout-resize', (_, data: { sidebarWidth: number; mainWidth: number }) => {
-    if (windowManager) {
-      windowManager.updateLayout(data.sidebarWidth);
+  ipcMain.on(
+    'layout-resize',
+    (_, data: { sidebarWidth: number; mainWidth: number }) => {
+      if (windowManager) {
+        windowManager.updateLayout(data.sidebarWidth)
+      }
     }
-  });
+  )
 }
 
 // 应用退出前注销所有快捷键
@@ -226,7 +243,3 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.
-
-
-
-

@@ -23,17 +23,22 @@ const STORE_KEYS = {
 const BROWSER_CONFIG = {
   CHROME_VERSION: '120.0.0.0',
   getUserAgent: (platform: string) => {
-    const osString = platform === 'macOS' ? 'Macintosh; Intel Mac OS X 10_15_7' : 'Windows NT 10.0; Win64; x64'
+    const osString =
+      platform === 'macOS'
+        ? 'Macintosh; Intel Mac OS X 10_15_7'
+        : 'Windows NT 10.0; Win64; x64'
     return `Mozilla/5.0 (${osString}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${BROWSER_CONFIG.CHROME_VERSION} Safari/537.36`
   },
   getHeaders: (userAgent: string, platform: string) => ({
     'User-Agent': userAgent,
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    Accept:
+      'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
     'Accept-Encoding': 'gzip, deflate, br',
     'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7',
     'Cache-Control': 'no-cache',
-    'Pragma': 'no-cache',
-    'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+    Pragma: 'no-cache',
+    'Sec-Ch-Ua':
+      '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
     'Sec-Ch-Ua-Mobile': '?0',
     'Sec-Ch-Ua-Platform': `"${platform}"`,
     'Sec-Fetch-Dest': 'document',
@@ -67,22 +72,33 @@ export class SideViewManager {
     this.store = new Store()
 
     // 初始化侧边栏状态
-    this.lastSidebarWidth = this.store.get(STORE_KEYS.SIDEBAR_WIDTH, UI_CONSTANTS.DEFAULT_SIDEBAR_WIDTH) as number
-    this.isCollapsed = this.store.get(STORE_KEYS.SIDEBAR_COLLAPSED, false) as boolean
+    this.lastSidebarWidth = this.store.get(
+      STORE_KEYS.SIDEBAR_WIDTH,
+      UI_CONSTANTS.DEFAULT_SIDEBAR_WIDTH
+    ) as number
+    this.isCollapsed = this.store.get(
+      STORE_KEYS.SIDEBAR_COLLAPSED,
+      false
+    ) as boolean
     this.sidebarWidth = this.isCollapsed ? 0 : this.lastSidebarWidth
 
     this.initializeConfigs()
   }
 
   private initializeConfigs() {
-    const savedConfigs = this.store.get(STORE_KEYS.SITE_CONFIGS) as SiteConfig[] | undefined
+    const savedConfigs = this.store.get(STORE_KEYS.SITE_CONFIGS) as
+      | SiteConfig[]
+      | undefined
     this.setSiteConfigs(savedConfigs || defaultSites)
   }
 
   updateSidebarWidth(width: number) {
     // 确保宽度在有效范围内
     if (width > 0) {
-      width = Math.max(UI_CONSTANTS.MIN_SIDEBAR_WIDTH, Math.min(width, UI_CONSTANTS.MAX_SIDEBAR_WIDTH))
+      width = Math.max(
+        UI_CONSTANTS.MIN_SIDEBAR_WIDTH,
+        Math.min(width, UI_CONSTANTS.MAX_SIDEBAR_WIDTH)
+      )
       this.lastSidebarWidth = width
       this.store.set(STORE_KEYS.SIDEBAR_WIDTH, width)
     }
@@ -128,7 +144,11 @@ export class SideViewManager {
     return Array.from(this.siteConfigs.values())
   }
 
-  createSideView(id: string, title: string, options?: { webPreferences?: WebPreferences }): SideView {
+  createSideView(
+    id: string,
+    title: string,
+    options?: { webPreferences?: WebPreferences }
+  ): SideView {
     try {
       // 如果视图已存在，直接返回
       const existingView = this.sideViews.get(id)
@@ -188,7 +208,11 @@ export class SideViewManager {
     this.loadUrl(view, id)
   }
 
-  private configureRequestHeaders(view: WebContentsView, userAgent: string, platform: string) {
+  private configureRequestHeaders(
+    view: WebContentsView,
+    userAgent: string,
+    platform: string
+  ) {
     view.webContents.session.webRequest.onBeforeSendHeaders(
       { urls: ['*://*.deepseek.com/*', '*://*.deepseek.ai/*'] },
       (details, callback) => {
@@ -203,7 +227,11 @@ export class SideViewManager {
     )
   }
 
-  private configureNavigator(view: WebContentsView, platform: string, userAgent: string) {
+  private configureNavigator(
+    view: WebContentsView,
+    platform: string,
+    userAgent: string
+  ) {
     const script = `
       try {
         const navigatorProps = {
@@ -233,14 +261,15 @@ export class SideViewManager {
   private loadUrl(view: WebContentsView, id: string) {
     const url = this.getUrlForId(id)
     if (url) {
-      view.webContents.loadURL(url)
+      view.webContents
+        .loadURL(url)
         .then(() => {
           const sideView = this.sideViews.get(id)
           if (sideView) {
             sideView.isLoaded = true
           }
         })
-        .catch((error) => {
+        .catch(error => {
           const sideView = this.sideViews.get(id)
           if (sideView) {
             sideView.error = error
@@ -254,12 +283,23 @@ export class SideViewManager {
     return config?.url || ''
   }
 
-  private calculateViewBounds(): { x: number; y: number; width: number; height: number } {
+  private calculateViewBounds(): {
+    x: number
+    y: number
+    width: number
+    height: number
+  } {
     const contentBounds = this.mainWindow.getContentBounds()
 
     // 确保宽度和高度至少为1，避免无效的尺寸
-    const width = Math.max(1, contentBounds.width - this.sidebarWidth - UI_CONSTANTS.RESIZE_HANDLE_WIDTH)
-    const height = Math.max(1, contentBounds.height - UI_CONSTANTS.TITLEBAR_HEIGHT)
+    const width = Math.max(
+      1,
+      contentBounds.width - this.sidebarWidth - UI_CONSTANTS.RESIZE_HANDLE_WIDTH
+    )
+    const height = Math.max(
+      1,
+      contentBounds.height - UI_CONSTANTS.TITLEBAR_HEIGHT
+    )
 
     if (this.isCollapsed) {
       return {
@@ -339,7 +379,9 @@ export class SideViewManager {
   }
 
   getCurrentView(): SideView | null {
-    return this.currentViewId ? this.sideViews.get(this.currentViewId) || null : null
+    return this.currentViewId
+      ? this.sideViews.get(this.currentViewId) || null
+      : null
   }
 
   updateViewBounds() {

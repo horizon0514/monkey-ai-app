@@ -58,24 +58,33 @@ document.addEventListener('DOMContentLoaded', modifyNavigator)
 const api = {
   switchTab: (tab: string) => ipcRenderer.invoke('switch-tab', tab),
   getSiteConfigs: () => ipcRenderer.invoke('get-site-configs'),
-  setSiteConfigs: (configs: unknown) => ipcRenderer.invoke('set-site-configs', configs),
+  setSiteConfigs: (configs: unknown) =>
+    ipcRenderer.invoke('set-site-configs', configs),
   openSettings: () => ipcRenderer.invoke('open-settings'),
   closeSettings: () => ipcRenderer.invoke('close-settings'),
-  setTheme: (theme: 'light' | 'dark' | 'system') => ipcRenderer.invoke('set-theme', theme),
+  setTheme: (theme: 'light' | 'dark' | 'system') =>
+    ipcRenderer.invoke('set-theme', theme),
   getTheme: () => ipcRenderer.invoke('get-theme'),
   getEffectiveTheme: () => ipcRenderer.invoke('get-effective-theme'),
   hideQuickWindow: () => ipcRenderer.send('hide-quick-window'),
-  openExternalUrl: (url: string) => ipcRenderer.invoke('open-external-url', url),
+  openExternalUrl: (url: string) =>
+    ipcRenderer.invoke('open-external-url', url),
   ipcRenderer: {
     send: (channel: string, data: unknown) => {
       ipcRenderer.send(channel, data)
     },
-    on: (channel: string, func: (event: IpcRendererEvent, ...args: unknown[]) => void) => {
+    on: (
+      channel: string,
+      func: (event: IpcRendererEvent, ...args: unknown[]) => void
+    ) => {
       ipcRenderer.on(channel, func)
     },
-    removeListener: (channel: string, func: (event: IpcRendererEvent, ...args: unknown[]) => void) => {
+    removeListener: (
+      channel: string,
+      func: (event: IpcRendererEvent, ...args: unknown[]) => void
+    ) => {
       ipcRenderer.removeListener(channel, func)
-    },
+    }
   }
 }
 

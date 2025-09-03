@@ -59,7 +59,9 @@ const QuickWindow: React.FC = () => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setSelectedIndex(prev => (prev < filteredActions.length - 1 ? prev + 1 : prev))
+      setSelectedIndex(prev =>
+        prev < filteredActions.length - 1 ? prev + 1 : prev
+      )
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setSelectedIndex(prev => (prev > 0 ? prev - 1 : prev))
@@ -74,59 +76,61 @@ const QuickWindow: React.FC = () => {
   }, [])
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className='flex h-screen flex-col'>
       {/* 背景遮罩层 - 深色半透明背景 */}
       {/* <div className="absolute inset-0 bg-black/20" /> */}
 
       {/* 主内容区 - 带毛玻璃效果 */}
-      <div className="relative flex flex-col h-full p-6 backdrop-blur-xl backdrop-saturate-150">
-        <div className="relative mb-4">
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <Search className="w-5 h-5 text-gray-400" />
+      <div className='relative flex h-full flex-col p-6 backdrop-blur-xl backdrop-saturate-150'>
+        <div className='relative mb-4'>
+          <div className='pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3'>
+            <Search className='h-5 w-5 text-gray-400' />
           </div>
           <input
-            id="quick-search-input"
+            id='quick-search-input'
             ref={inputRef}
-            type="text"
-            className="w-full p-3 pl-10 text-sm border-0 rounded-lg bg-white/10 placeholder-gray-400 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none backdrop-blur-sm"
-            placeholder="搜索命令..."
+            type='text'
+            className='w-full rounded-lg border-0 bg-white/10 p-3 pl-10 text-sm text-white placeholder-gray-400 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+            placeholder='搜索命令...'
             value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
+            onChange={e => setSearchValue(e.target.value)}
             onKeyDown={handleKeyDown}
           />
           {searchValue && (
             <button
-              className="absolute inset-y-0 right-0 flex items-center pr-3"
+              className='absolute inset-y-0 right-0 flex items-center pr-3'
               onClick={() => setSearchValue('')}
             >
-              <X className="w-5 h-5 text-gray-400 hover:text-white" />
+              <X className='h-5 w-5 text-gray-400 hover:text-white' />
             </button>
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className='flex-1 overflow-y-auto'>
           {filteredActions.length > 0 ? (
-            <ul className="space-y-2">
+            <ul className='space-y-2'>
               {filteredActions.map((action, index) => (
                 <li
                   key={action.id}
-                  className={`p-3 rounded-lg cursor-pointer flex items-center backdrop-blur-sm ${
+                  className={`flex cursor-pointer items-center rounded-lg p-3 backdrop-blur-sm ${
                     index === selectedIndex
                       ? 'bg-blue-600/80 text-white'
                       : 'bg-white/5 hover:bg-white/10'
                   }`}
                   onClick={() => action.action()}
                 >
-                  {action.icon && <div className="mr-3">{action.icon}</div>}
+                  {action.icon && <div className='mr-3'>{action.icon}</div>}
                   <div>
-                    <p className="font-medium">{action.title}</p>
-                    <p className="text-xs text-gray-400">{action.description}</p>
+                    <p className='font-medium'>{action.title}</p>
+                    <p className='text-xs text-gray-400'>
+                      {action.description}
+                    </p>
                   </div>
                 </li>
               ))}
             </ul>
           ) : (
-            <div className="flex items-center justify-center h-full text-gray-400">
+            <div className='flex h-full items-center justify-center text-gray-400'>
               <p>没有找到匹配的命令</p>
             </div>
           )}

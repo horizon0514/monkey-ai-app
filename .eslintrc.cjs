@@ -5,5 +5,17 @@ module.exports = {
     'plugin:react/jsx-runtime',
     '@electron-toolkit/eslint-config-ts/recommended',
     '@electron-toolkit/eslint-config-prettier'
-  ]
+  ],
+  settings: {
+    react: {
+      version: 'detect'
+    }
+  },
+  rules: {
+    'prettier/prettier': 'off',
+    'react/prop-types': 'off',
+    '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-this-alias': 'off'
+  }
 }

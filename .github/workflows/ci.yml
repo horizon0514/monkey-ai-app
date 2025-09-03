@@ -2,9 +2,9 @@ name: Lint and Type Check
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 permissions:
   contents: read
@@ -34,4 +34,3 @@ jobs:
 
       - name: Prettier Check
         run: yarn format:check
-

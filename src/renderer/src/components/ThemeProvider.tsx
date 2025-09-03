@@ -15,7 +15,7 @@ type ThemeProviderState = {
 
 const initialState: ThemeProviderState = {
   theme: 'system',
-  setTheme: () => null,
+  setTheme: () => null
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
@@ -32,7 +32,7 @@ export function ThemeProvider({
 
   useEffect(() => {
     // 初始化时获取当前有效主题
-    window.electron.getEffectiveTheme().then((effectiveTheme) => {
+    window.electron.getEffectiveTheme().then(effectiveTheme => {
       setThemeState(effectiveTheme as Theme)
     })
 
@@ -49,11 +49,20 @@ export function ThemeProvider({
     }
 
     window.electron.ipcRenderer.on('theme-changed', themeChangedHandler)
-    window.electron.ipcRenderer.on('system-theme-changed', systemThemeChangedHandler)
+    window.electron.ipcRenderer.on(
+      'system-theme-changed',
+      systemThemeChangedHandler
+    )
 
     return () => {
-      window.electron.ipcRenderer.removeListener('theme-changed', themeChangedHandler)
-      window.electron.ipcRenderer.removeListener('system-theme-changed', systemThemeChangedHandler)
+      window.electron.ipcRenderer.removeListener(
+        'theme-changed',
+        themeChangedHandler
+      )
+      window.electron.ipcRenderer.removeListener(
+        'system-theme-changed',
+        systemThemeChangedHandler
+      )
     }
   }, [theme])
 
@@ -79,7 +88,10 @@ export function ThemeProvider({
   }
 
   return (
-    <ThemeProviderContext.Provider {...props} value={value}>
+    <ThemeProviderContext.Provider
+      {...props}
+      value={value}
+    >
       {children}
     </ThemeProviderContext.Provider>
   )
