@@ -332,8 +332,10 @@ export class SideViewManager {
       // 如果点击的是当前视图，则切换为隐藏（移除视图）
       if (this.currentViewId === id) {
         const currentView = this.sideViews.get(this.currentViewId)
-        if (currentView && !currentView.error) {
-          this.mainWindow.contentView.removeChildView(currentView.view)
+        if (currentView) {
+          try {
+            this.mainWindow.contentView.removeChildView(currentView.view)
+          } catch {}
         }
         this.currentViewId = null
         return
@@ -342,8 +344,10 @@ export class SideViewManager {
       // 若已有其他视图显示，先移除
       if (this.currentViewId) {
         const currentView = this.sideViews.get(this.currentViewId)
-        if (currentView && !currentView.error) {
-          this.mainWindow.contentView.removeChildView(currentView.view)
+        if (currentView) {
+          try {
+            this.mainWindow.contentView.removeChildView(currentView.view)
+          } catch {}
         }
       }
 
@@ -369,9 +373,9 @@ export class SideViewManager {
 
     try {
       if (this.currentViewId === id) {
-        if (!sideView.error) {
+        try {
           this.mainWindow.contentView.removeChildView(sideView.view)
-        }
+        } catch {}
         this.currentViewId = null
       }
 
