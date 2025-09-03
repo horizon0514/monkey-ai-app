@@ -6,6 +6,7 @@ import { SiteConfig } from '../../../../shared/types'
 interface SidebarProps {
   children?: React.ReactNode
   onTabChange?: (tab: string) => void
+  onTabClick?: (tab: string) => void
   value: string
   sites: SiteConfig[]
   onOpenSettings?: () => void
@@ -22,6 +23,7 @@ const SITE_ICONS: Record<string, LucideIcon> = {
 
 export const Sidebar: React.FC<SidebarProps> = ({
   onTabChange,
+  onTabClick,
   value,
   sites,
   onOpenSettings
@@ -58,6 +60,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <TabsTrigger
                   key={site.id}
                   value={site.id}
+                  onClick={() => onTabClick?.(site.id)}
                   className='group relative justify-start gap-3 px-4 py-2.5 text-sm font-medium transition-all no-drag hover:bg-muted/50 data-[state=active]:bg-primary/10 data-[state=active]:text-primary'
                 >
                   <Icon

@@ -60,6 +60,12 @@ function App() {
             setSelectedTab(tab)
             window.electron.switchTab(tab)
           }}
+          onTabClick={tab => {
+            // 即使重复点击同一项，也确保关闭设置并刷新该视图
+            if (showSettings) setShowSettings(false)
+            setSelectedTab(tab)
+            window.electron.switchTab(tab)
+          }}
           sites={enabledSites}
           onOpenSettings={() => {
             window.electron.openSettings()
