@@ -315,6 +315,10 @@ export class WindowManager {
     this.sideViewManager.goForwardCurrent()
   }
 
+  getCurrentUrl() {
+    return this.sideViewManager.getCurrentUrl()
+  }
+
   getMainWindow(): BrowserWindow | null {
     return this.mainWindow
   }

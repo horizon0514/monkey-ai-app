@@ -1,4 +1,4 @@
-import { BrowserWindow, WebContentsView, WebPreferences } from 'electron'
+import { BrowserWindow, WebContentsView, WebPreferences, shell } from 'electron'
 import Store from 'electron-store'
 import { defaultSites } from '../shared/defaultSites'
 import { SiteConfig } from '../shared/types'
@@ -433,8 +433,18 @@ export class SideViewManager {
   private attachNavigationHandlers(view: WebContentsView) {
     // 在当前视图内打开新窗口链接
     view.webContents.setWindowOpenHandler(details => {
+      const url = details.url || ''
+      // 针对 Google 登录等敏感域名，改为系统浏览器打开
+      const shouldOpenExternal = /^(https?:\/\/)?([\w.-]*\.)?(accounts\.google\.com|accounts\.youtube\.com|google\.com\/oauth|googleusercontent\.com)\//i.test(
+        url
+      )
+      if (shouldOpenExternal) {
+        shell.openExternal(url).catch(() => {})
+        return { action: 'deny' }
+      }
+
       try {
-        view.webContents.loadURL(details.url)
+        view.webContents.loadURL(url)
       } catch (e) {
         console.error('Failed to open url in-place:', e)
       }
@@ -445,6 +455,17 @@ export class SideViewManager {
     view.webContents.on('did-navigate', emit)
     view.webContents.on('did-navigate-in-page', emit)
     view.webContents.on('did-frame-finish-load', emit)
+  }
+
+  getCurrentUrl(): string | null {
+    if (!this.currentViewId) return null
+    const currentView = this.sideViews.get(this.currentViewId)
+    if (!currentView) return null
+    try {
+      return currentView.view.webContents.getURL()
+    } catch {
+      return null
+    }
   }
 
   private emitNavigationState(view: WebContentsView) {

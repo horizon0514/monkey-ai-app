@@ -1,7 +1,7 @@
 import React from 'react'
 import { SiteConfig } from '../../../../shared/types'
 import { Button } from '@renderer/components/ui/button'
-import { Moon, Sun, ArrowLeft, ArrowRight } from 'lucide-react'
+import { Moon, Sun, ArrowLeft, ArrowRight, ExternalLink } from 'lucide-react'
 import { useTheme } from '@renderer/components/ThemeProvider'
 
 interface TopbarProps {
@@ -57,6 +57,21 @@ export const Topbar: React.FC<TopbarProps> = ({ tab, title }) => {
             <ArrowRight size={16} />
           </button>
         </div>
+      </div>
+      <div className='px-2 no-drag'>
+        <Button
+          variant='ghost'
+          size='icon'
+          title='在浏览器中打开'
+          onClick={async () => {
+            const url = await window.electron.getCurrentUrl()
+            if (url && typeof url === 'string') {
+              window.electron.openExternalUrl(url)
+            }
+          }}
+        >
+          <ExternalLink size={18} className='text-muted-foreground' />
+        </Button>
       </div>
       <div className='px-2 no-drag'>
         <Button

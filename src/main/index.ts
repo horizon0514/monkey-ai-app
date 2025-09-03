@@ -217,6 +217,9 @@ function setupIpcHandlers() {
   ipcMain.handle('go-forward', () => {
     windowManager?.goForwardCurrent()
   })
+  ipcMain.handle('get-current-url', () => {
+    return windowManager?.getCurrentUrl()
+  })
 
   // 监听主题变化
   nativeTheme.on('updated', () => {
