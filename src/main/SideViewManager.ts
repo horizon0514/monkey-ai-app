@@ -329,7 +329,17 @@ export class SideViewManager {
     }
 
     try {
-      // 移除当前视图的显示（但不销毁）
+      // 如果点击的是当前视图，则切换为隐藏（移除视图）
+      if (this.currentViewId === id) {
+        const currentView = this.sideViews.get(this.currentViewId)
+        if (currentView && !currentView.error) {
+          this.mainWindow.contentView.removeChildView(currentView.view)
+        }
+        this.currentViewId = null
+        return
+      }
+
+      // 若已有其他视图显示，先移除
       if (this.currentViewId) {
         const currentView = this.sideViews.get(this.currentViewId)
         if (currentView && !currentView.error) {
@@ -337,13 +347,13 @@ export class SideViewManager {
         }
       }
 
-      // 显示选中的视图
+      // 显示新视图
       this.mainWindow.contentView.addChildView(sideView.view)
       const bounds = this.calculateViewBounds()
       sideView.view.setBounds(bounds)
       this.currentViewId = id
 
-      // 如果还没有加载过，重新加载一次
+      // 首次加载时装载 URL
       if (!sideView.isLoaded) {
         this.loadUrl(sideView.view, id)
       }
