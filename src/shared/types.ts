@@ -3,4 +3,5 @@ export interface SiteConfig {
   title: string
   url: string
   enabled: boolean
+  external?: boolean
 }

@@ -1,4 +1,4 @@
-import { BrowserWindow, WebContentsView, WebPreferences } from 'electron'
+import { BrowserWindow, WebContentsView, WebPreferences, shell } from 'electron'
 import Store from 'electron-store'
 import { defaultSites } from '../shared/defaultSites'
 import { SiteConfig } from '../shared/types'
@@ -202,6 +202,9 @@ export class SideViewManager {
     // 配置浏览器环境
     this.configureNavigator(view, platform, userAgent)
 
+    // 处理新窗口与导航状态
+    this.attachNavigationHandlers(view)
+
     // 加载URL
     this.loadUrl(view, id)
   }
@@ -355,6 +358,9 @@ export class SideViewManager {
       sideView.view.setBounds(bounds)
       this.currentViewId = id
 
+      // 初始发送导航状态
+      this.emitNavigationState(sideView.view)
+
       // 首次加载时装载 URL
       if (!sideView.isLoaded) {
         this.loadUrl(sideView.view, id)
@@ -363,6 +369,21 @@ export class SideViewManager {
       console.error(`Error showing side view ${id}:`, error)
       sideView.error = error as Error
     }
+  }
+
+  hideCurrentView() {
+    if (!this.currentViewId) return
+    const currentView = this.sideViews.get(this.currentViewId)
+    if (!currentView) {
+      this.currentViewId = null
+      return
+    }
+    try {
+      this.mainWindow.contentView.removeChildView(currentView.view)
+    } catch (error) {
+      // Ignore removal errors
+    }
+    this.currentViewId = null
   }
 
   closeSideView(id: string) {
@@ -406,6 +427,107 @@ export class SideViewManager {
     if (currentView) {
       const bounds = this.calculateViewBounds()
       currentView.view.setBounds(bounds)
+    }
+  }
+
+  private attachNavigationHandlers(view: WebContentsView) {
+    const isGoogleAuthUrl = (url: string) =>
+      /^(https?:\/\/)?([\w.-]*\.)?(accounts\.google\.com|accounts\.youtube\.com|google\.com\/oauth|googleusercontent\.com)\//i.test(
+        url || ''
+      )
+
+    // 在当前视图内打开新窗口链接
+    view.webContents.setWindowOpenHandler(details => {
+      const url = details.url || ''
+      // 针对 Google 登录等敏感域名，改为系统浏览器打开
+      if (isGoogleAuthUrl(url)) {
+        shell.openExternal(url).catch(() => {})
+        return { action: 'deny' }
+      }
+
+      try {
+        view.webContents.loadURL(url)
+      } catch (e) {
+        console.error('Failed to open url in-place:', e)
+      }
+      return { action: 'deny' }
+    })
+
+    // will-navigate：页面内跳转到 Google 登录时外部打开
+    view.webContents.on('will-navigate', (event, url) => {
+      if (isGoogleAuthUrl(url)) {
+        event.preventDefault()
+        shell.openExternal(url).catch(() => {})
+      }
+    })
+
+    // will-redirect：遇到 3xx 跳转到 Google 登录时外部打开
+    view.webContents.on('will-redirect', (event, url) => {
+      if (isGoogleAuthUrl(url)) {
+        event.preventDefault()
+        shell.openExternal(url).catch(() => {})
+      }
+    })
+
+    const emit = () => this.emitNavigationState(view)
+    view.webContents.on('did-navigate', emit)
+    view.webContents.on('did-navigate-in-page', emit)
+    view.webContents.on('did-frame-finish-load', emit)
+  }
+
+  getCurrentUrl(): string | null {
+    if (!this.currentViewId) return null
+    const currentView = this.sideViews.get(this.currentViewId)
+    if (!currentView) return null
+    try {
+      return currentView.view.webContents.getURL()
+    } catch {
+      return null
+    }
+  }
+
+  private emitNavigationState(view: WebContentsView) {
+    try {
+      const canGoBack = view.webContents.canGoBack()
+      const canGoForward = view.webContents.canGoForward()
+      this.mainWindow.webContents.send('navigation-state-changed', {
+        canGoBack,
+        canGoForward
+      })
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  getNavigationState(): { canGoBack: boolean; canGoForward: boolean } {
+    if (!this.currentViewId) return { canGoBack: false, canGoForward: false }
+    const currentView = this.sideViews.get(this.currentViewId)
+    if (!currentView) return { canGoBack: false, canGoForward: false }
+    try {
+      return {
+        canGoBack: currentView.view.webContents.canGoBack(),
+        canGoForward: currentView.view.webContents.canGoForward()
+      }
+    } catch {
+      return { canGoBack: false, canGoForward: false }
+    }
+  }
+
+  goBackCurrent() {
+    if (!this.currentViewId) return
+    const currentView = this.sideViews.get(this.currentViewId)
+    if (!currentView) return
+    if (currentView.view.webContents.canGoBack()) {
+      currentView.view.webContents.goBack()
+    }
+  }
+
+  goForwardCurrent() {
+    if (!this.currentViewId) return
+    const currentView = this.sideViews.get(this.currentViewId)
+    if (!currentView) return
+    if (currentView.view.webContents.canGoForward()) {
+      currentView.view.webContents.goForward()
     }
   }
 }

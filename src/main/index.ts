@@ -151,6 +151,16 @@ function setupIpcHandlers() {
       .getSiteConfigs()
       .find(config => config.id === tab)
     if (siteConfig) {
+      // 如果标记为外部打开，则在系统浏览器中打开 URL 并不创建内嵌视图
+      if (siteConfig.external) {
+        if (siteConfig.url) {
+          await shell.openExternal(siteConfig.url)
+        }
+        // 同时隐藏当前视图，避免挡住主界面
+        windowManager.hideCurrentView()
+        return
+      }
+
       windowManager.createSideView(siteConfig.id, siteConfig.title, {
         webPreferences: {
           contextIsolation: true
@@ -187,11 +197,13 @@ function setupIpcHandlers() {
 
   // 打开设置窗口
   ipcMain.handle('open-settings', () => {
-    windowManager?.createOrShowSettingsWindow()
+    // 内嵌设置模式：隐藏当前 WebContentsView，由渲染进程展示设置页
+    windowManager?.hideCurrentView()
   })
 
   // 关闭设置窗口
   ipcMain.handle('close-settings', () => {
+    // 兼容：如果存在独立设置窗口则关闭；内嵌模式无需处理
     windowManager?.closeWindow(WindowType.SETTINGS)
   })
 
@@ -203,6 +215,20 @@ function setupIpcHandlers() {
   // 打开外部URL
   ipcMain.handle('open-external-url', async (_, url: string) => {
     await shell.openExternal(url)
+  })
+
+  // 导航控制
+  ipcMain.handle('get-navigation-state', () => {
+    return windowManager?.getNavigationState()
+  })
+  ipcMain.handle('go-back', () => {
+    windowManager?.goBackCurrent()
+  })
+  ipcMain.handle('go-forward', () => {
+    windowManager?.goForwardCurrent()
+  })
+  ipcMain.handle('get-current-url', () => {
+    return windowManager?.getCurrentUrl()
   })
 
   // 监听主题变化

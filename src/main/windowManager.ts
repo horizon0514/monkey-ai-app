@@ -75,13 +75,13 @@ export class WindowManager {
     }
 
     const config: WindowConfig = {
-      width: 480,
-      height: 500,
+      width: 1040,
+      height: 720,
       titleBarStyle: 'hidden',
-      resizable: false,
+      resizable: true,
       minimizable: false,
-      maximizable: false,
-      alwaysOnTop: true,
+      maximizable: true,
+      alwaysOnTop: false,
       backgroundColor: nativeTheme.shouldUseDarkColors ? '#1e1e2a' : '#ffffff',
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
@@ -234,8 +234,39 @@ export class WindowManager {
   }
 
   setSiteConfigs(configs: SiteConfig[]) {
+    // 对比旧配置，关闭被删除、被禁用或 URL 变更的视图
+    const oldConfigs = this.getSiteConfigs()
+    const oldMap = new Map(oldConfigs.map(cfg => [cfg.id, cfg]))
+    const newMap = new Map(configs.map(cfg => [cfg.id, cfg]))
+
+    // 关闭删除或禁用的
+    for (const oldCfg of oldConfigs) {
+      const newCfg = newMap.get(oldCfg.id)
+      if (!newCfg || newCfg.enabled === false) {
+        try {
+          this.closeSideView(oldCfg.id)
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    // URL 变化的也关闭以便重建
+    for (const newCfg of configs) {
+      const oldCfg = oldMap.get(newCfg.id)
+      if (oldCfg && oldCfg.url !== newCfg.url) {
+        try {
+          this.closeSideView(newCfg.id)
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    // 存储并更新到 SideViewManager
     this.store.set('siteConfigs', configs)
     this.sideViewManager.setSiteConfigs(configs)
+
     // 配置变更后也预热启用站点
     this.prewarmEnabledSiteViews()
   }
@@ -266,6 +297,26 @@ export class WindowManager {
 
   getCurrentView() {
     return this.sideViewManager.getCurrentView()
+  }
+
+  hideCurrentView() {
+    this.sideViewManager.hideCurrentView()
+  }
+
+  getNavigationState() {
+    return this.sideViewManager.getNavigationState()
+  }
+
+  goBackCurrent() {
+    this.sideViewManager.goBackCurrent()
+  }
+
+  goForwardCurrent() {
+    this.sideViewManager.goForwardCurrent()
+  }
+
+  getCurrentUrl() {
+    return this.sideViewManager.getCurrentUrl()
   }
 
   getMainWindow(): BrowserWindow | null {

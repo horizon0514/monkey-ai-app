@@ -5,11 +5,13 @@ import { useEffect, useState } from 'react'
 import { defaultSites } from '../../shared/defaultSites'
 import { SiteConfig } from '../../shared/types'
 import { Topbar } from './components/Topbar'
+import { SettingsModal } from './components/SettingsWindow'
 
 function App() {
   const [sites, setSites] = useState<SiteConfig[]>(defaultSites)
   const [selectedTab, setSelectedTab] = useState(defaultSites[0].id)
   const [, setIsSidebarCollapsed] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
   useEffect(() => {
     // 监听站点配置变化
@@ -22,6 +24,7 @@ function App() {
       if (!currentSite?.enabled) {
         const firstEnabledSite = configs.find(site => site.enabled)
         if (firstEnabledSite) {
+          setShowSettings(false)
           setSelectedTab(firstEnabledSite.id)
           window.electron.switchTab(firstEnabledSite.id)
         }
@@ -53,23 +56,45 @@ function App() {
         <Sidebar
           value={selectedTab}
           onTabChange={tab => {
+            setShowSettings(false)
+            setSelectedTab(tab)
+            window.electron.switchTab(tab)
+          }}
+          onTabClick={tab => {
+            // 即使重复点击同一项，也确保关闭设置并刷新该视图
+            if (showSettings) setShowSettings(false)
             setSelectedTab(tab)
             window.electron.switchTab(tab)
           }}
           sites={enabledSites}
+          onOpenSettings={() => {
+            window.electron.openSettings()
+            setShowSettings(true)
+          }}
         />
       }
       topbar={
-        <Topbar
-          tab={
-            enabledSites.find(site => site.id === selectedTab) ||
-            enabledSites[0]
-          }
-        />
+        showSettings ? (
+          <Topbar title='设置' />
+        ) : (
+          <Topbar
+            tab={
+              enabledSites.find(site => site.id === selectedTab) ||
+              enabledSites[0]
+            }
+          />
+        )
       }
       onSidebarCollapsedChange={setIsSidebarCollapsed}
     >
-      <MainContent selectedTab={selectedTab} />
+      {showSettings ? (
+        <SettingsModal
+          inline
+          onClose={() => setShowSettings(false)}
+        />
+      ) : (
+        <MainContent selectedTab={selectedTab} />
+      )}
     </Layout>
   )
 }

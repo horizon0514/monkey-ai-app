@@ -6,8 +6,10 @@ import { SiteConfig } from '../../../../shared/types'
 interface SidebarProps {
   children?: React.ReactNode
   onTabChange?: (tab: string) => void
+  onTabClick?: (tab: string) => void
   value: string
   sites: SiteConfig[]
+  onOpenSettings?: () => void
 }
 
 // 为每个网站ID定义对应的图标
@@ -21,14 +23,20 @@ const SITE_ICONS: Record<string, LucideIcon> = {
 
 export const Sidebar: React.FC<SidebarProps> = ({
   onTabChange,
+  onTabClick,
   value,
-  sites
+  sites,
+  onOpenSettings
 }) => {
   const currentValue = sites.some(s => s.id === value)
     ? value
     : sites[0]?.id || ''
   const handleSettingsClick = () => {
-    window.electron.openSettings()
+    if (onOpenSettings) {
+      onOpenSettings()
+    } else {
+      window.electron.openSettings()
+    }
   }
 
   return (
@@ -52,6 +60,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <TabsTrigger
                   key={site.id}
                   value={site.id}
+                  onClick={() => onTabClick?.(site.id)}
                   className='group relative justify-start gap-3 px-4 py-2.5 text-sm font-medium transition-all no-drag hover:bg-muted/50 data-[state=active]:bg-primary/10 data-[state=active]:text-primary'
                 >
                   <Icon
@@ -67,10 +76,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </TabsList>
         </Tabs>
       </div>
-      <div className='p-2'>
+      <div className='app-region-no-drag p-2'>
         <button
           onClick={handleSettingsClick}
-          className='flex w-full items-center gap-3 rounded-md px-4 py-2.5 text-sm font-medium text-muted-foreground no-drag hover:bg-muted/50 hover:text-foreground/90'
+          className='app-region-no-drag flex w-full items-center gap-3 rounded-md px-4 py-2.5 text-sm font-medium text-muted-foreground no-drag hover:bg-muted/50 hover:text-foreground/90'
         >
           <Settings
             size={18}
