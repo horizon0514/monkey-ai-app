@@ -107,16 +107,28 @@ export const Layout: React.FC<LayoutProps> = ({
 
   // 处理折叠状态变化
   const handleToggleCollapse = useCallback(() => {
-    if (!isSidebarCollapsed) {
-      // 折叠时保存当前宽度
+    const willCollapse = !isSidebarCollapsed
+
+    if (willCollapse) {
+      // 折叠：保存当前宽度并发送 0 宽度到主进程
       setLastSidebarSize(sidebarSize)
       setSidebarSize(0)
+      sendUpdate(0, true)
     } else {
-      // 展开时恢复到上次的宽度
+      // 展开：恢复上次宽度并同步到主进程
       setSidebarSize(lastSidebarSize)
+      const sidebarWidthPx = Math.floor(
+        (window.innerWidth * lastSidebarSize) / 100
+      )
+      const boundedWidth = Math.max(
+        MIN_SIDEBAR_WIDTH,
+        Math.min(sidebarWidthPx, MAX_SIDEBAR_WIDTH)
+      )
+      sendUpdate(boundedWidth, false)
     }
-    setIsSidebarCollapsed(!isSidebarCollapsed)
-  }, [isSidebarCollapsed, sidebarSize, lastSidebarSize])
+
+    setIsSidebarCollapsed(willCollapse)
+  }, [isSidebarCollapsed, sidebarSize, lastSidebarSize, sendUpdate])
 
   // 暴露折叠状态变化的回调
   useEffect(() => {
@@ -160,6 +172,7 @@ export const Layout: React.FC<LayoutProps> = ({
         </div>
       </div>
       <ResizablePanelGroup
+        key={isSidebarCollapsed ? 'collapsed' : 'expanded'}
         direction='horizontal'
         className='flex-1 [&>div[role=separator]]:w-2 [&>div[role=separator]]:bg-transparent [&>div[role=separator]]:transition-colors [&>div[role=separator]]:hover:bg-accent/10'
         onLayout={handleSidebarResize}
