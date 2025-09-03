@@ -30,7 +30,7 @@ nsis:
   deleteAppDataOnUninstall: false
 mac:
   target:
-    - target: zip
+    - target: dmg
       arch:
         - x64
         - arm64
