@@ -24,6 +24,7 @@ function App() {
       if (!currentSite?.enabled) {
         const firstEnabledSite = configs.find(site => site.enabled)
         if (firstEnabledSite) {
+          setShowSettings(false)
           setSelectedTab(firstEnabledSite.id)
           window.electron.switchTab(firstEnabledSite.id)
         }
@@ -55,6 +56,7 @@ function App() {
         <Sidebar
           value={selectedTab}
           onTabChange={tab => {
+            setShowSettings(false)
             setSelectedTab(tab)
             window.electron.switchTab(tab)
           }}
