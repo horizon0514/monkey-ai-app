@@ -1,6 +1,19 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@renderer/lib/utils'
-import { Sun, Moon, Monitor, Bot, Info } from 'lucide-react'
+import {
+  Sun,
+  Moon,
+  Monitor,
+  Bot,
+  Info,
+  Plus,
+  Pencil,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  Save,
+  X
+} from 'lucide-react'
 import { Theme } from '@renderer/types/theme'
 import { SiteConfig } from '../../../shared/types'
 import { defaultSites } from '../../../shared/defaultSites'
@@ -16,6 +29,10 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
   const [sites, setSites] = useState<SiteConfig[]>(defaultSites)
   const [activeSection, setActiveSection] = useState<'appearance' | 'assistants' | 'about'>('appearance')
   const [search, setSearch] = useState('')
+  const [isAdding, setIsAdding] = useState(false)
+  const [addingDraft, setAddingDraft] = useState<{ title: string; url: string }>({ title: '', url: '' })
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingDraft, setEditingDraft] = useState<{ title: string; url: string }>({ title: '', url: '' })
 
   const appearanceRef = useRef<HTMLDivElement | null>(null)
   const assistantsRef = useRef<HTMLDivElement | null>(null)
@@ -31,14 +48,10 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
   // 获取站点配置
   useEffect(() => {
     window.electron.getSiteConfigs().then((configs: SiteConfig[]) => {
-      setSites(
-        defaultSites.map(site => ({
-          ...site,
-          enabled: configs.some(
-            config => config.id === site.id && config.enabled
-          )
-        }))
+      const list = (configs && configs.length > 0 ? configs : defaultSites).map(
+        s => ({ ...s })
       )
+      setSites(list)
     })
   }, [])
 
@@ -60,13 +73,99 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
     setCurrentTheme(theme)
   }
 
+  // 保存到主进程并更新本地
+  const commitSites = async (newSites: SiteConfig[]) => {
+    await window.electron.setSiteConfigs(newSites)
+    setSites(newSites)
+  }
+
   // 切换站点启用状态
   const handleSiteToggle = async (siteId: string) => {
     const newSites = sites.map(site =>
       site.id === siteId ? { ...site, enabled: !site.enabled } : site
     )
-    await window.electron.setSiteConfigs(newSites)
-    setSites(newSites)
+    await commitSites(newSites)
+  }
+
+  // 生成 id（slug）
+  const slugify = (text: string) =>
+    text
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\u4e00-\u9fa5\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+
+  // URL 基础校验
+  const isValidUrl = (url: string) => /^https?:\/\//i.test(url.trim())
+
+  // 新增助手
+  const handleAdd = () => {
+    setIsAdding(true)
+    setAddingDraft({ title: '', url: '' })
+  }
+
+  const handleAddSave = async () => {
+    const title = addingDraft.title.trim()
+    const url = addingDraft.url.trim()
+    if (!title || !isValidUrl(url)) return
+    const idBase = slugify(title) || 'assistant'
+    let id = idBase
+    let i = 1
+    const existingIds = new Set(sites.map(s => s.id))
+    while (existingIds.has(id)) {
+      id = `${idBase}-${i++}`
+    }
+    const newSite: SiteConfig = { id, title, url, enabled: true }
+    const newSites = [...sites, newSite]
+    await commitSites(newSites)
+    setIsAdding(false)
+  }
+
+  const handleAddCancel = () => {
+    setIsAdding(false)
+  }
+
+  // 编辑助手
+  const startEdit = (site: SiteConfig) => {
+    setEditingId(site.id)
+    setEditingDraft({ title: site.title, url: site.url })
+  }
+
+  const handleEditSave = async (siteId: string) => {
+    const title = editingDraft.title.trim()
+    const url = editingDraft.url.trim()
+    if (!title || !isValidUrl(url)) return
+    const newSites = sites.map(s =>
+      s.id === siteId ? { ...s, title, url } : s
+    )
+    await commitSites(newSites)
+    setEditingId(null)
+  }
+
+  const handleEditCancel = () => {
+    setEditingId(null)
+  }
+
+  // 删除助手
+  const handleDelete = async (siteId: string) => {
+    const newSites = sites.filter(s => s.id !== siteId)
+    await commitSites(newSites)
+  }
+
+  // 排序（上移/下移）
+  const moveUp = async (index: number) => {
+    if (index <= 0) return
+    const newSites = [...sites]
+    ;[newSites[index - 1], newSites[index]] = [newSites[index], newSites[index - 1]]
+    await commitSites(newSites)
+  }
+
+  const moveDown = async (index: number) => {
+    if (index >= sites.length - 1) return
+    const newSites = [...sites]
+    ;[newSites[index + 1], newSites[index]] = [newSites[index], newSites[index + 1]]
+    await commitSites(newSites)
   }
 
   const filteredSites = useMemo(() => {
@@ -211,24 +310,147 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
             >
               AI 助手
             </h3>
-            <p className='text-sm text-muted-foreground'>选择要启用的 AI 助手。</p>
-            <div className='space-y-2'>
-              {filteredSites.map(site => (
-                <label
-                  key={site.id}
-                  className='flex items-center justify-between rounded-md border border-transparent px-2 py-2 hover:border-border/60'
+            <p className='text-sm text-muted-foreground'>自定义你想要使用的助手（名称、URL、启用状态、顺序）。</p>
+
+            {/* 新增按钮 */}
+            {!isAdding ? (
+              <div className='mb-2'>
+                <button
+                  onClick={handleAdd}
+                  className={cn(
+                    'inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground'
+                  )}
                 >
-                  <div className='flex items-center space-x-3'>
-                    <input
-                      type='checkbox'
-                      checked={site.enabled}
-                      onChange={() => handleSiteToggle(site.id)}
-                      className='h-4 w-4 rounded border-border text-primary focus:ring-primary'
-                    />
-                    <span className='text-sm font-medium'>{site.title}</span>
+                  <Plus size={14} /> 新增助手
+                </button>
+              </div>
+            ) : (
+              <div className='mb-3 rounded-md border border-border/60 p-3'>
+                <div className='mb-2 text-sm font-medium'>新增助手</div>
+                <div className='flex gap-2'>
+                  <input
+                    value={addingDraft.title}
+                    onChange={e => setAddingDraft(d => ({ ...d, title: e.target.value }))}
+                    placeholder='名称（必填）'
+                    className='flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring'
+                  />
+                  <input
+                    value={addingDraft.url}
+                    onChange={e => setAddingDraft(d => ({ ...d, url: e.target.value }))}
+                    placeholder='https://example.com/'
+                    className='flex-[2] rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring'
+                  />
+                </div>
+                <div className='mt-2 flex justify-end gap-2'>
+                  <button
+                    onClick={handleAddCancel}
+                    className='inline-flex items-center gap-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground'
+                  >
+                    <X size={14} /> 取消
+                  </button>
+                  <button
+                    onClick={handleAddSave}
+                    className='inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90'
+                  >
+                    <Save size={14} /> 保存
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 列表 */}
+            <div className='space-y-2'>
+              {filteredSites.map((site, idx) => {
+                const isEditing = editingId === site.id
+                return (
+                  <div
+                    key={site.id}
+                    className='rounded-md border border-transparent px-2 py-2 hover:border-border/60'
+                  >
+                    {!isEditing ? (
+                      <div className='flex items-center gap-2'>
+                        <div className='flex items-center gap-3'>
+                          <input
+                            type='checkbox'
+                            checked={site.enabled}
+                            onChange={() => handleSiteToggle(site.id)}
+                            className='h-4 w-4 rounded border-border text-primary focus:ring-primary'
+                          />
+                        </div>
+                        <div className='min-w-0 flex-1'>
+                          <div className='truncate text-sm font-medium'>{site.title}</div>
+                          <div className='truncate text-xs text-muted-foreground'>{site.url}</div>
+                        </div>
+                        <div className='flex items-center gap-1'>
+                          <button
+                            onClick={() => moveUp(idx)}
+                            className='rounded-md p-1 hover:bg-accent/60'
+                            title='上移'
+                          >
+                            <ArrowUp size={16} />
+                          </button>
+                          <button
+                            onClick={() => moveDown(idx)}
+                            className='rounded-md p-1 hover:bg-accent/60'
+                            title='下移'
+                          >
+                            <ArrowDown size={16} />
+                          </button>
+                          <button
+                            onClick={() => startEdit(site)}
+                            className='rounded-md p-1 hover:bg-accent/60'
+                            title='编辑'
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(site.id)}
+                            className='rounded-md p-1 hover:bg-destructive/10'
+                            title='删除'
+                          >
+                            <Trash2 size={16} className='text-destructive' />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className='flex items-center gap-2'>
+                        <div className='min-w-0 flex-1'>
+                          <div className='flex gap-2'>
+                            <input
+                              value={editingDraft.title}
+                              onChange={e => setEditingDraft(d => ({ ...d, title: e.target.value }))}
+                              placeholder='名称（必填）'
+                              className='flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring'
+                            />
+                            <input
+                              value={editingDraft.url}
+                              onChange={e => setEditingDraft(d => ({ ...d, url: e.target.value }))}
+                              placeholder='https://example.com/'
+                              className='flex-[2] rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring'
+                            />
+                          </div>
+                        </div>
+                        <div className='flex items-center gap-1'>
+                          <button
+                            onClick={handleEditCancel}
+                            className='rounded-md p-1 hover:bg-accent/60'
+                            title='取消'
+                          >
+                            <X size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleEditSave(site.id)}
+                            className='rounded-md p-1 hover:bg-accent/60'
+                            title='保存'
+                          >
+                            <Save size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </label>
-              ))}
+                )
+              })}
               {filteredSites.length === 0 && (
                 <div className='py-6 text-center text-sm text-muted-foreground'>没有匹配的助手</div>
               )}
@@ -251,6 +473,60 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
           {/* 底部操作条 */}
           <div className='sticky bottom-0 mt-10 -mx-6 border-t border-border/40 bg-gradient-to-t from-background to-background/70 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
             <div className='flex items-center justify-end gap-2'>
+              <button
+                onClick={async () => {
+                  // 导出 JSON
+                  const blob = new Blob([JSON.stringify(sites, null, 2)], {
+                    type: 'application/json'
+                  })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = 'assistants.json'
+                  a.click()
+                  URL.revokeObjectURL(url)
+                }}
+                className={cn(
+                  'inline-flex items-center justify-center whitespace-nowrap rounded-md border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
+                )}
+              >
+                导出
+              </button>
+              <button
+                onClick={async () => {
+                  // 导入 JSON
+                  const input = document.createElement('input')
+                  input.type = 'file'
+                  input.accept = 'application/json'
+                  input.onchange = async () => {
+                    if (!input.files || input.files.length === 0) return
+                    const file = input.files[0]
+                    try {
+                      const text = await file.text()
+                      const list = JSON.parse(text) as SiteConfig[]
+                      if (!Array.isArray(list)) return
+                      // 简单过滤
+                      const cleaned = list
+                        .filter(it => it && it.id && it.title && it.url)
+                        .map(it => ({
+                          id: String(it.id),
+                          title: String(it.title),
+                          url: String(it.url),
+                          enabled: Boolean(it.enabled)
+                        }))
+                      await commitSites(cleaned)
+                    } catch (e) {
+                      console.error('Import failed', e)
+                    }
+                  }
+                  input.click()
+                }}
+                className={cn(
+                  'inline-flex items-center justify-center whitespace-nowrap rounded-md border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
+                )}
+              >
+                导入
+              </button>
               <button
                 onClick={handleResetDefaults}
                 className={cn(
