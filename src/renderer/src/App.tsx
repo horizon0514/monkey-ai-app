@@ -66,12 +66,16 @@ function App() {
         />
       }
       topbar={
-        <Topbar
-          tab={
-            enabledSites.find(site => site.id === selectedTab) ||
-            enabledSites[0]
-          }
-        />
+        showSettings ? (
+          <Topbar title='设置' />
+        ) : (
+          <Topbar
+            tab={
+              enabledSites.find(site => site.id === selectedTab) ||
+              enabledSites[0]
+            }
+          />
+        )
       }
       onSidebarCollapsedChange={setIsSidebarCollapsed}
     >

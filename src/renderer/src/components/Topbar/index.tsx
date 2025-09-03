@@ -5,16 +5,18 @@ import { Moon, Sun } from 'lucide-react'
 import { useTheme } from '@renderer/components/ThemeProvider'
 
 interface TopbarProps {
-  tab: SiteConfig
+  tab?: SiteConfig
+  title?: string
 }
 
-export const Topbar: React.FC<TopbarProps> = ({ tab }) => {
+export const Topbar: React.FC<TopbarProps> = ({ tab, title }) => {
   const { theme, setTheme } = useTheme()
+  const displayTitle = title ?? tab?.title ?? ''
 
   return (
     <div className='flex h-12 w-full items-center border-b border-border/40 bg-background/95 backdrop-blur drag-region supports-[backdrop-filter]:bg-background/60'>
       <div className='flex items-center gap-2 px-2'>
-        <span className='text-sm font-medium'>{tab.title}</span>
+        <span className='text-sm font-medium'>{displayTitle}</span>
       </div>
       <div className='flex-1' />
       <div className='px-2 no-drag'>
