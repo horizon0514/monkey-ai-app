@@ -5,11 +5,13 @@ import { useEffect, useState } from 'react'
 import { defaultSites } from '../../shared/defaultSites'
 import { SiteConfig } from '../../shared/types'
 import { Topbar } from './components/Topbar'
+import { SettingsModal } from './components/SettingsWindow'
 
 function App() {
   const [sites, setSites] = useState<SiteConfig[]>(defaultSites)
   const [selectedTab, setSelectedTab] = useState(defaultSites[0].id)
   const [, setIsSidebarCollapsed] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
   useEffect(() => {
     // 监听站点配置变化
@@ -57,6 +59,7 @@ function App() {
             window.electron.switchTab(tab)
           }}
           sites={enabledSites}
+          onOpenSettings={() => setShowSettings(true)}
         />
       }
       topbar={
@@ -69,7 +72,11 @@ function App() {
       }
       onSidebarCollapsedChange={setIsSidebarCollapsed}
     >
-      <MainContent selectedTab={selectedTab} />
+      {showSettings ? (
+        <SettingsModal inline onClose={() => setShowSettings(false)} />
+      ) : (
+        <MainContent selectedTab={selectedTab} />
+      )}
     </Layout>
   )
 }

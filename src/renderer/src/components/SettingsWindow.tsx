@@ -5,7 +5,12 @@ import { Theme } from '@renderer/types/theme'
 import { SiteConfig } from '../../../shared/types'
 import { defaultSites } from '../../../shared/defaultSites'
 
-export const SettingsModal: React.FC = () => {
+type SettingsProps = {
+  inline?: boolean
+  onClose?: () => void
+}
+
+export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose }) => {
   const isMacOS = window.platform.os === 'darwin'
   const [currentTheme, setCurrentTheme] = useState<Theme>('system')
   const [sites, setSites] = useState<SiteConfig[]>(defaultSites)
@@ -37,17 +42,17 @@ export const SettingsModal: React.FC = () => {
     })
   }, [])
 
-  // 按 ESC 关闭弹窗
+  // 按 ESC 关闭（仅独立窗口模式）
   useEffect(() => {
+    if (inline) return
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         window.electron.closeSettings()
       }
     }
-
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [inline])
 
   // 切换主题
   const handleThemeChange = async (theme: Theme) => {
@@ -94,12 +99,14 @@ export const SettingsModal: React.FC = () => {
 
   return (
     <div className='flex h-full w-full flex-col bg-background'>
-      <div className='flex h-12 shrink-0 items-center border-b border-border/40 bg-background drag-region'>
-        <div className='flex flex-1 items-center justify-center'>
-          <span className='text-sm font-medium'>设置</span>
+      {!inline && (
+        <div className='flex h-12 shrink-0 items-center border-b border-border/40 bg-background drag-region'>
+          <div className='flex flex-1 items-center justify-center'>
+            <span className='text-sm font-medium'>设置</span>
+          </div>
+          {!isMacOS && <div className='w-[78px]' />}
         </div>
-        {!isMacOS && <div className='w-[78px]' />}
-      </div>
+      )}
 
       <div className='flex min-h-0 flex-1'>
         {/* 左侧分组导航 */}
@@ -253,7 +260,7 @@ export const SettingsModal: React.FC = () => {
                 恢复默认
               </button>
               <button
-                onClick={() => window.electron.closeSettings()}
+                onClick={() => (onClose ? onClose() : window.electron.closeSettings())}
                 className={cn(
                   'inline-flex items-center justify-center whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
                 )}

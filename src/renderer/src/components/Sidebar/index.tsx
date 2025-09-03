@@ -8,6 +8,7 @@ interface SidebarProps {
   onTabChange?: (tab: string) => void
   value: string
   sites: SiteConfig[]
+  onOpenSettings?: () => void
 }
 
 // 为每个网站ID定义对应的图标
@@ -22,13 +23,18 @@ const SITE_ICONS: Record<string, LucideIcon> = {
 export const Sidebar: React.FC<SidebarProps> = ({
   onTabChange,
   value,
-  sites
+  sites,
+  onOpenSettings
 }) => {
   const currentValue = sites.some(s => s.id === value)
     ? value
     : sites[0]?.id || ''
   const handleSettingsClick = () => {
-    window.electron.openSettings()
+    if (onOpenSettings) {
+      onOpenSettings()
+    } else {
+      window.electron.openSettings()
+    }
   }
 
   return (
