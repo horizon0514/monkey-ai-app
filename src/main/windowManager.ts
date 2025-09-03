@@ -75,13 +75,13 @@ export class WindowManager {
     }
 
     const config: WindowConfig = {
-      width: 480,
-      height: 500,
+      width: 1040,
+      height: 720,
       titleBarStyle: 'hidden',
-      resizable: false,
+      resizable: true,
       minimizable: false,
-      maximizable: false,
-      alwaysOnTop: true,
+      maximizable: true,
+      alwaysOnTop: false,
       backgroundColor: nativeTheme.shouldUseDarkColors ? '#1e1e2a' : '#ffffff',
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
