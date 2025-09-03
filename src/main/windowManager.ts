@@ -268,6 +268,10 @@ export class WindowManager {
     return this.sideViewManager.getCurrentView()
   }
 
+  hideCurrentView() {
+    this.sideViewManager.hideCurrentView()
+  }
+
   getMainWindow(): BrowserWindow | null {
     return this.mainWindow
   }
