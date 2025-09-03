@@ -1,17 +1,13 @@
-import React, { useEffect } from 'react';
+import React, { useEffect } from 'react'
 
 interface MainContentProps {
-  selectedTab: string;
+  selectedTab: string
 }
 
 export const MainContent: React.FC<MainContentProps> = ({ selectedTab }) => {
   useEffect(() => {
-    window.electron.switchTab(selectedTab);
-  }, [selectedTab]);
+    window.electron.switchTab(selectedTab)
+  }, [selectedTab])
 
-  return (
-    <main className="flex-1 overflow-hidden" />
-  );
-};
-
-
+  return <main className='flex-1 overflow-hidden' />
+}

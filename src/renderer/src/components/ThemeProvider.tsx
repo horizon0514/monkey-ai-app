@@ -15,7 +15,7 @@ type ThemeProviderState = {
 
 const initialState: ThemeProviderState = {
   theme: 'system',
-  setTheme: () => null,
+  setTheme: () => null
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
@@ -32,28 +32,37 @@ export function ThemeProvider({
 
   useEffect(() => {
     // 初始化时获取当前有效主题
-    window.electron.getEffectiveTheme().then((effectiveTheme) => {
+    window.electron.getEffectiveTheme().then(effectiveTheme => {
       setThemeState(effectiveTheme as Theme)
     })
 
     // 监听主题变化
-    const themeChangedHandler = (event: unknown, ...args: unknown[]) => {
+    const themeChangedHandler = (_event: unknown, ...args: unknown[]) => {
       const newTheme = args[0] as Theme
       setThemeState(newTheme)
     }
 
     // 监听系统主题变化
-    const systemThemeChangedHandler = (event: unknown, ...args: unknown[]) => {
+    const systemThemeChangedHandler = (_event: unknown, ...args: unknown[]) => {
       const newTheme = args[0] as Theme
       setThemeState(newTheme)
     }
 
     window.electron.ipcRenderer.on('theme-changed', themeChangedHandler)
-    window.electron.ipcRenderer.on('system-theme-changed', systemThemeChangedHandler)
+    window.electron.ipcRenderer.on(
+      'system-theme-changed',
+      systemThemeChangedHandler
+    )
 
     return () => {
-      window.electron.ipcRenderer.removeListener('theme-changed', themeChangedHandler)
-      window.electron.ipcRenderer.removeListener('system-theme-changed', systemThemeChangedHandler)
+      window.electron.ipcRenderer.removeListener(
+        'theme-changed',
+        themeChangedHandler
+      )
+      window.electron.ipcRenderer.removeListener(
+        'system-theme-changed',
+        systemThemeChangedHandler
+      )
     }
   }, [theme])
 
@@ -79,7 +88,10 @@ export function ThemeProvider({
   }
 
   return (
-    <ThemeProviderContext.Provider {...props} value={value}>
+    <ThemeProviderContext.Provider
+      {...props}
+      value={value}
+    >
       {children}
     </ThemeProviderContext.Provider>
   )

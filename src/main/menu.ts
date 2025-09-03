@@ -1,31 +1,40 @@
-import { Menu, MenuItemConstructorOptions, app, shell, BrowserWindow } from 'electron'
+import {
+  Menu,
+  MenuItemConstructorOptions,
+  app,
+  shell,
+  BrowserWindow
+} from 'electron'
 import { WindowManager } from './windowManager'
 
-export function createMenu(window: BrowserWindow, windowManager: WindowManager) {
+export function createMenu(
+  window: BrowserWindow,
+  windowManager: WindowManager
+) {
   const isMac = process.platform === 'darwin'
 
   const template: MenuItemConstructorOptions[] = [
     ...(isMac
-      ? [{
-          label: app.name,
-          submenu: [
-            { role: 'about' as const },
-            { type: 'separator' as const },
-            { role: 'services' as const },
-            { type: 'separator' as const },
-            { role: 'hide' as const },
-            { role: 'hideOthers' as const },
-            { role: 'unhide' as const },
-            { type: 'separator' as const },
-            { role: 'quit' as const }
-          ]
-        }]
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { role: 'about' as const },
+              { type: 'separator' as const },
+              { role: 'services' as const },
+              { type: 'separator' as const },
+              { role: 'hide' as const },
+              { role: 'hideOthers' as const },
+              { role: 'unhide' as const },
+              { type: 'separator' as const },
+              { role: 'quit' as const }
+            ]
+          }
+        ]
       : []),
     {
       label: 'File',
-      submenu: [
-        isMac ? { role: 'close' as const } : { role: 'quit' as const }
-      ]
+      submenu: [isMac ? { role: 'close' as const } : { role: 'quit' as const }]
     },
     {
       label: 'Edit',

@@ -25,7 +25,10 @@ function updateTheme(theme: Theme) {
   const windows = BrowserWindow.getAllWindows()
   windows.forEach(window => {
     if (theme === 'system') {
-      window.webContents.send('theme-changed', nativeTheme.shouldUseDarkColors ? 'dark' : 'light')
+      window.webContents.send(
+        'theme-changed',
+        nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
+      )
     } else {
       window.webContents.send('theme-changed', theme)
     }
@@ -46,7 +49,11 @@ export default function () {
 
     // 获取当前实际主题（考虑系统主题）
     ipcMain.handle('get-effective-theme', () => {
-      return currentTheme === 'system' ? (nativeTheme.shouldUseDarkColors ? 'dark' : 'light') : currentTheme
+      return currentTheme === 'system'
+        ? nativeTheme.shouldUseDarkColors
+          ? 'dark'
+          : 'light'
+        : currentTheme
     })
 
     // 初始化为系统主题

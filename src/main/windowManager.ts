@@ -45,7 +45,9 @@ export class WindowManager {
     this.sideViewManager = new SideViewManager(mainWindow)
 
     // 从存储中加载配置，如果没有则使用默认配置
-    const savedConfigs = this.store.get('siteConfigs') as SiteConfig[] | undefined
+    const savedConfigs = this.store.get('siteConfigs') as
+      | SiteConfig[]
+      | undefined
     if (savedConfigs) {
       this.setSiteConfigs(savedConfigs)
     } else {
@@ -80,7 +82,7 @@ export class WindowManager {
         preload: join(__dirname, '../preload/index.js'),
         sandbox: false,
         nodeIntegration: true,
-        contextIsolation: true,
+        contextIsolation: true
       }
     }
 
@@ -92,7 +94,9 @@ export class WindowManager {
 
     // 加载设置页面
     if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-      settingsWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/settings.html`)
+      settingsWindow.loadURL(
+        `${process.env['ELECTRON_RENDERER_URL']}/settings.html`
+      )
     } else {
       settingsWindow.loadFile(join(__dirname, '../renderer/settings.html'))
     }
@@ -122,7 +126,7 @@ export class WindowManager {
       transparent: true,
       resizable: false,
       webPreferences: {
-        preload: join(__dirname, '../preload/index.js'),
+        preload: join(__dirname, '../preload/index.js')
       }
     }
 
@@ -233,7 +237,11 @@ export class WindowManager {
     return this.sideViewManager.getSiteConfigs()
   }
 
-  createSideView(id: string, title: string, options?: { webPreferences?: WebPreferences }) {
+  createSideView(
+    id: string,
+    title: string,
+    options?: { webPreferences?: WebPreferences }
+  ) {
     return this.sideViewManager.createSideView(id, title, options)
   }
 
