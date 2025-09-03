@@ -431,14 +431,16 @@ export class SideViewManager {
   }
 
   private attachNavigationHandlers(view: WebContentsView) {
+    const isGoogleAuthUrl = (url: string) =>
+      /^(https?:\/\/)?([\w.-]*\.)?(accounts\.google\.com|accounts\.youtube\.com|google\.com\/oauth|googleusercontent\.com)\//i.test(
+        url || ''
+      )
+
     // 在当前视图内打开新窗口链接
     view.webContents.setWindowOpenHandler(details => {
       const url = details.url || ''
       // 针对 Google 登录等敏感域名，改为系统浏览器打开
-      const shouldOpenExternal = /^(https?:\/\/)?([\w.-]*\.)?(accounts\.google\.com|accounts\.youtube\.com|google\.com\/oauth|googleusercontent\.com)\//i.test(
-        url
-      )
-      if (shouldOpenExternal) {
+      if (isGoogleAuthUrl(url)) {
         shell.openExternal(url).catch(() => {})
         return { action: 'deny' }
       }
@@ -449,6 +451,22 @@ export class SideViewManager {
         console.error('Failed to open url in-place:', e)
       }
       return { action: 'deny' }
+    })
+
+    // will-navigate：页面内跳转到 Google 登录时外部打开
+    view.webContents.on('will-navigate', (event, url) => {
+      if (isGoogleAuthUrl(url)) {
+        event.preventDefault()
+        shell.openExternal(url).catch(() => {})
+      }
+    })
+
+    // will-redirect：遇到 3xx 跳转到 Google 登录时外部打开
+    view.webContents.on('will-redirect', (event, url) => {
+      if (isGoogleAuthUrl(url)) {
+        event.preventDefault()
+        shell.openExternal(url).catch(() => {})
+      }
     })
 
     const emit = () => this.emitNavigationState(view)
