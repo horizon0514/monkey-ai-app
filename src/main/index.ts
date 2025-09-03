@@ -151,6 +151,16 @@ function setupIpcHandlers() {
       .getSiteConfigs()
       .find(config => config.id === tab)
     if (siteConfig) {
+      // 如果标记为外部打开，则在系统浏览器中打开 URL 并不创建内嵌视图
+      if (siteConfig.external) {
+        if (siteConfig.url) {
+          await shell.openExternal(siteConfig.url)
+        }
+        // 同时隐藏当前视图，避免挡住主界面
+        windowManager.hideCurrentView()
+        return
+      }
+
       windowManager.createSideView(siteConfig.id, siteConfig.title, {
         webPreferences: {
           contextIsolation: true

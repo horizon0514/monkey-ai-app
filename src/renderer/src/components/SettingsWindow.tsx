@@ -30,9 +30,9 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
   const [activeSection, setActiveSection] = useState<'appearance' | 'assistants' | 'about'>('appearance')
   const [search, setSearch] = useState('')
   const [isAdding, setIsAdding] = useState(false)
-  const [addingDraft, setAddingDraft] = useState<{ title: string; url: string }>({ title: '', url: '' })
+  const [addingDraft, setAddingDraft] = useState<{ title: string; url: string; external: boolean }>({ title: '', url: '', external: false })
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editingDraft, setEditingDraft] = useState<{ title: string; url: string }>({ title: '', url: '' })
+  const [editingDraft, setEditingDraft] = useState<{ title: string; url: string; external: boolean }>({ title: '', url: '', external: false })
 
   const appearanceRef = useRef<HTMLDivElement | null>(null)
   const assistantsRef = useRef<HTMLDivElement | null>(null)
@@ -102,7 +102,7 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
   // 新增助手
   const handleAdd = () => {
     setIsAdding(true)
-    setAddingDraft({ title: '', url: '' })
+    setAddingDraft({ title: '', url: '', external: false })
   }
 
   const handleAddSave = async () => {
@@ -116,7 +116,7 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
     while (existingIds.has(id)) {
       id = `${idBase}-${i++}`
     }
-    const newSite: SiteConfig = { id, title, url, enabled: true }
+    const newSite: SiteConfig = { id, title, url, enabled: true, external: addingDraft.external }
     const newSites = [...sites, newSite]
     await commitSites(newSites)
     setIsAdding(false)
@@ -129,7 +129,7 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
   // 编辑助手
   const startEdit = (site: SiteConfig) => {
     setEditingId(site.id)
-    setEditingDraft({ title: site.title, url: site.url })
+    setEditingDraft({ title: site.title, url: site.url, external: Boolean(site.external) })
   }
 
   const handleEditSave = async (siteId: string) => {
@@ -137,7 +137,7 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
     const url = editingDraft.url.trim()
     if (!title || !isValidUrl(url)) return
     const newSites = sites.map(s =>
-      s.id === siteId ? { ...s, title, url } : s
+      s.id === siteId ? { ...s, title, url, external: editingDraft.external } : s
     )
     await commitSites(newSites)
     setEditingId(null)
@@ -341,6 +341,16 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
                     className='flex-[2] rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring'
                   />
                 </div>
+                <div className='mt-2 flex items-center gap-2'>
+                  <input
+                    id='adding-external'
+                    type='checkbox'
+                    checked={addingDraft.external}
+                    onChange={e => setAddingDraft(d => ({ ...d, external: e.target.checked }))}
+                    className='h-4 w-4 rounded border-border text-primary focus:ring-primary'
+                  />
+                  <label htmlFor='adding-external' className='text-sm text-muted-foreground'>在外部浏览器中打开（适用于不支持内嵌登录的站点，如 Google）</label>
+                </div>
                 <div className='mt-2 flex justify-end gap-2'>
                   <button
                     onClick={handleAddCancel}
@@ -428,6 +438,16 @@ export const SettingsModal: React.FC<SettingsProps> = ({ inline = false, onClose
                               placeholder='https://example.com/'
                               className='flex-[2] rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring'
                             />
+                          </div>
+                          <div className='mt-2 flex items-center gap-2'>
+                            <input
+                              id={`external-${site.id}`}
+                              type='checkbox'
+                              checked={editingDraft.external}
+                              onChange={e => setEditingDraft(d => ({ ...d, external: e.target.checked }))}
+                              className='h-4 w-4 rounded border-border text-primary focus:ring-primary'
+                            />
+                            <label htmlFor={`external-${site.id}`} className='text-sm text-muted-foreground'>在外部浏览器中打开</label>
                           </div>
                         </div>
                         <div className='flex items-center gap-1'>
