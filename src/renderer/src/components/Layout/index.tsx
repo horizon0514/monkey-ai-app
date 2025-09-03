@@ -149,9 +149,7 @@ export const Layout: React.FC<LayoutProps> = ({ sidebar, topbar, children, onSid
           </div>
         </ResizablePanel>
         {!isSidebarCollapsed && (
-          <ResizableHandle>
-            <div className="absolute top-0 left-1/2 h-full w-[1px] bg-border transform -translate-x-1/2" />
-          </ResizableHandle>
+          <CustomResizeHandle />
         )}
         <ResizablePanel
           defaultSize={isSidebarCollapsed ? 100 : 100 - sidebarSize}

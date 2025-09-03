@@ -9,7 +9,7 @@ import { Topbar } from './components/Topbar';
 function App() {
   const [sites, setSites] = useState<SiteConfig[]>(defaultSites);
   const [selectedTab, setSelectedTab] = useState(defaultSites[0].id);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [, setIsSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     // 监听站点配置变化

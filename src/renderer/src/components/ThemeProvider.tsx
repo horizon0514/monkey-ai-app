@@ -37,13 +37,13 @@ export function ThemeProvider({
     })
 
     // 监听主题变化
-    const themeChangedHandler = (event: unknown, ...args: unknown[]) => {
+    const themeChangedHandler = (_event: unknown, ...args: unknown[]) => {
       const newTheme = args[0] as Theme
       setThemeState(newTheme)
     }
 
     // 监听系统主题变化
-    const systemThemeChangedHandler = (event: unknown, ...args: unknown[]) => {
+    const systemThemeChangedHandler = (_event: unknown, ...args: unknown[]) => {
       const newTheme = args[0] as Theme
       setThemeState(newTheme)
     }
