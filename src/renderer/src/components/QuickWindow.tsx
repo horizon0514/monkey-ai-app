@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { Search, Command, X, ExternalLink } from 'lucide-react'
 
 interface QuickAction {
@@ -16,29 +16,32 @@ const QuickWindow: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null)
 
   // 示例操作列表 - 可以根据需要扩展
-  const allActions: QuickAction[] = [
-    {
-      id: 'settings',
-      title: '打开设置',
-      description: '打开应用程序设置',
-      icon: <Command size={16} />,
-      action: () => {
-        window.electron.openSettings()
-        window.electron.hideQuickWindow()
+  const allActions = useMemo<QuickAction[]>(
+    () => [
+      {
+        id: 'settings',
+        title: '打开设置',
+        description: '打开应用程序设置',
+        icon: <Command size={16} />,
+        action: () => {
+          window.electron.openSettings()
+          window.electron.hideQuickWindow()
+        }
+      },
+      {
+        id: 'open-website',
+        title: '访问官网',
+        description: '在浏览器中访问官网',
+        icon: <ExternalLink size={16} />,
+        action: () => {
+          window.electron.openExternalUrl('https://example.com')
+          window.electron.hideQuickWindow()
+        }
       }
-    },
-    {
-      id: 'open-website',
-      title: '访问官网',
-      description: '在浏览器中访问官网',
-      icon: <ExternalLink size={16} />,
-      action: () => {
-        window.electron.openExternalUrl('https://example.com')
-        window.electron.hideQuickWindow()
-      }
-    }
-    // 可以根据需要添加更多操作
-  ]
+      // 可以根据需要添加更多操作
+    ],
+    []
+  )
 
   // 过滤操作
   useEffect(() => {
@@ -53,7 +56,7 @@ const QuickWindow: React.FC = () => {
       setFilteredActions(filtered)
     }
     setSelectedIndex(0)
-  }, [searchValue])
+  }, [searchValue, allActions])
 
   // 处理键盘导航
   const handleKeyDown = (e: React.KeyboardEvent) => {

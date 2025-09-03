@@ -35,8 +35,6 @@ const BROWSER_CONFIG = {
       'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
     'Accept-Encoding': 'gzip, deflate, br',
     'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7',
-    'Cache-Control': 'no-cache',
-    Pragma: 'no-cache',
     'Sec-Ch-Ua':
       '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
     'Sec-Ch-Ua-Mobile': '?0',
@@ -310,9 +308,6 @@ export class SideViewManager {
       }
     }
 
-    console.log('this.sidebarWidth', this.sidebarWidth)
-    console.log('width', width)
-
     return {
       x: this.sidebarWidth + UI_CONSTANTS.RESIZE_HANDLE_WIDTH,
       y: UI_CONSTANTS.TITLEBAR_HEIGHT,
@@ -323,27 +318,34 @@ export class SideViewManager {
 
   showSideView(id: string) {
     const sideView = this.sideViews.get(id)
-    if (!sideView || sideView.error) {
-      console.error(`Failed to show side view ${id}:`, sideView?.error)
+    if (!sideView) {
+      console.error(`Side view ${id} not found`)
       return
     }
 
+    // 即使有错误也显示视图，让用户看到错误页面
+    if (sideView.error) {
+      console.warn(
+        `Side view ${id} has error, but still showing:`,
+        sideView.error
+      )
+    }
+
     try {
-      // 如果点击的是当前视图，则切换为隐藏（移除视图）
+      // 如果点击的是当前已显示的视图，直接返回（不做任何操作）
       if (this.currentViewId === id) {
-        const currentView = this.sideViews.get(this.currentViewId)
-        if (currentView && !currentView.error) {
-          this.mainWindow.contentView.removeChildView(currentView.view)
-        }
-        this.currentViewId = null
         return
       }
 
       // 若已有其他视图显示，先移除
       if (this.currentViewId) {
         const currentView = this.sideViews.get(this.currentViewId)
-        if (currentView && !currentView.error) {
-          this.mainWindow.contentView.removeChildView(currentView.view)
+        if (currentView) {
+          try {
+            this.mainWindow.contentView.removeChildView(currentView.view)
+          } catch (error) {
+            // Ignore removal errors
+          }
         }
       }
 
@@ -369,8 +371,10 @@ export class SideViewManager {
 
     try {
       if (this.currentViewId === id) {
-        if (!sideView.error) {
+        try {
           this.mainWindow.contentView.removeChildView(sideView.view)
+        } catch (error) {
+          // Ignore removal errors
         }
         this.currentViewId = null
       }

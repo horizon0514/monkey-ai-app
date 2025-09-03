@@ -24,6 +24,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   value,
   sites
 }) => {
+  const currentValue = sites.some(s => s.id === value)
+    ? value
+    : sites[0]?.id || ''
   const handleSettingsClick = () => {
     window.electron.openSettings()
   }
@@ -37,7 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </p>
         </div>
         <Tabs
-          value={value}
+          value={currentValue}
           onValueChange={onTabChange}
           orientation='vertical'
           className='h-full'

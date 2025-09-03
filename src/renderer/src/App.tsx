@@ -23,6 +23,7 @@ function App() {
         const firstEnabledSite = configs.find(site => site.enabled)
         if (firstEnabledSite) {
           setSelectedTab(firstEnabledSite.id)
+          window.electron.switchTab(firstEnabledSite.id)
         }
       }
     }
@@ -51,7 +52,10 @@ function App() {
       sidebar={
         <Sidebar
           value={selectedTab}
-          onTabChange={setSelectedTab}
+          onTabChange={tab => {
+            setSelectedTab(tab)
+            window.electron.switchTab(tab)
+          }}
           sites={enabledSites}
         />
       }
