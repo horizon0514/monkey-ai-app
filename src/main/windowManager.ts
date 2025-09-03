@@ -303,6 +303,18 @@ export class WindowManager {
     this.sideViewManager.hideCurrentView()
   }
 
+  getNavigationState() {
+    return this.sideViewManager.getNavigationState()
+  }
+
+  goBackCurrent() {
+    this.sideViewManager.goBackCurrent()
+  }
+
+  goForwardCurrent() {
+    this.sideViewManager.goForwardCurrent()
+  }
+
   getMainWindow(): BrowserWindow | null {
     return this.mainWindow
   }

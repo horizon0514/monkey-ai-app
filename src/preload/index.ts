@@ -69,6 +69,9 @@ const api = {
   hideQuickWindow: () => ipcRenderer.send('hide-quick-window'),
   openExternalUrl: (url: string) =>
     ipcRenderer.invoke('open-external-url', url),
+  getNavigationState: () => ipcRenderer.invoke('get-navigation-state'),
+  goBack: () => ipcRenderer.invoke('go-back'),
+  goForward: () => ipcRenderer.invoke('go-forward'),
   ipcRenderer: {
     send: (channel: string, data: unknown) => {
       ipcRenderer.send(channel, data)

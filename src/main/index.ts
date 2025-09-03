@@ -207,6 +207,17 @@ function setupIpcHandlers() {
     await shell.openExternal(url)
   })
 
+  // 导航控制
+  ipcMain.handle('get-navigation-state', () => {
+    return windowManager?.getNavigationState()
+  })
+  ipcMain.handle('go-back', () => {
+    windowManager?.goBackCurrent()
+  })
+  ipcMain.handle('go-forward', () => {
+    windowManager?.goForwardCurrent()
+  })
+
   // 监听主题变化
   nativeTheme.on('updated', () => {
     const windows = BrowserWindow.getAllWindows()
