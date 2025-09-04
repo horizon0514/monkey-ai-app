@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/horizon0514/monkey-ai-app/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/horizon0514/monkey-ai-app/actions/workflows/ci.yml)
 
-An Electron application with React and TypeScript
+一个支持内嵌AI网页以及BYOK的AI应用
 
 ## 下载
 
@@ -16,8 +16,8 @@ An Electron application with React and TypeScript
 
 ## 截图
 
-![App Icon](resources/icon.png)
-![App Icon 1024](icons/1024x1024.png)
+![截图](screenshot/screenshot1.png)
+![截图](screenshot/screenshot2.png)
 
 ## Recommended IDE Setup
 
@@ -34,6 +34,7 @@ $ yarn
 ### Development
 
 ```bash
+$ yarn install
 $ yarn dev
 ```
 
