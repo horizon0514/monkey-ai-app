@@ -135,8 +135,8 @@ export class HonoServer {
             messages
           })
 
-          // Return AI SDK UI compatible stream response
-          return result.toTextStreamResponse()
+          // Return AI SDK UI message stream response for @ai-sdk/react useChat
+          return result.toUIMessageStreamResponse()
         } catch (err: any) {
           // Fallback: non-stream with generateText
           const result = await generateText({

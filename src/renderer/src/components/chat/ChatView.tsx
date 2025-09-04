@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { cn } from '@renderer/lib/utils'
-import { useChat } from 'ai/react'
+import { useChat } from '@ai-sdk/react'
 
 export const ChatView: React.FC = () => {
   const [models, setModels] = useState<Array<{ id?: string; name?: string }>>([])
@@ -9,14 +9,23 @@ export const ChatView: React.FC = () => {
   const [apiBase, setApiBase] = useState<string>('http://127.0.0.1:3399')
   const api = `${apiBase}/chat/stream`
 
-  const {
-    messages: chatMessages,
-    input: chatInput,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
-    stop
-  } = useChat({ api, streamMode: 'text', body: { model: selectedModel } })
+  const chat = useChat({
+    transport: {
+      sendMessages: async ({ messages, abortSignal }) => {
+        const res = await fetch(api, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: selectedModel, messages }),
+          signal: abortSignal
+        })
+        if (!res.ok || !res.body) {
+          throw new Error(`HTTP_${res.status}`)
+        }
+        return res.body as unknown as ReadableStream<any>
+      },
+      reconnectToStream: async () => null
+    }
+  })
 
   useEffect(() => {
     let mounted = true
@@ -40,10 +49,15 @@ export const ChatView: React.FC = () => {
     }
   }, [])
 
+  const [prompt, setPrompt] = useState('')
   const handleSend = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
     if (!selectedModel) return
+    const text = prompt.trim()
+    if (!text) return
     setError(null)
-    handleSubmit(e)
+    chat.sendMessage({ text })
+    setPrompt('')
   }
 
   return (
@@ -74,14 +88,14 @@ export const ChatView: React.FC = () => {
       </div>
 
       <div className='flex-1 space-y-3 overflow-auto p-3'>
-        {chatMessages.map(msg => (
+        {chat.messages.map(msg => (
           <div key={msg.id} className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
             <div className={cn('max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm shadow-sm', msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
-              {typeof msg.content === 'string' ? msg.content : (msg.content as any)}
+              {msg.parts?.map((p: any, idx: number) => (p?.type === 'text' ? <span key={idx}>{p.text}</span> : null))}
             </div>
           </div>
         ))}
-        {chatMessages.length === 0 && (
+        {chat.messages.length === 0 && (
           <div className='p-6 text-center text-sm text-muted-foreground'>开始与 AI 对话吧</div>
         )}
       </div>
@@ -90,14 +104,18 @@ export const ChatView: React.FC = () => {
         <div className='flex items-center gap-2'>
           <form onSubmit={handleSend} className='flex flex-1 items-center gap-2'>
             <textarea
-              value={chatInput}
-              onChange={handleInputChange}
+              value={prompt}
+              onChange={e => setPrompt(e.target.value)}
               onKeyDown={e => {
                 if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                   e.preventDefault()
                   if (!selectedModel) return
                   setError(null)
-                  handleSubmit(e as any)
+                  const text = prompt.trim()
+                  if (text) {
+                    chat.sendMessage({ text })
+                    setPrompt('')
+                  }
                 }
               }}
               placeholder='输入消息，按 Ctrl/⌘ + Enter 发送'
@@ -106,20 +124,20 @@ export const ChatView: React.FC = () => {
             />
             <button
               type='submit'
-              disabled={isLoading}
+              disabled={chat.status === 'submitted' || chat.status === 'streaming' || !prompt.trim()}
               className='inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50'
             >
               发送
             </button>
-            {isLoading && (
+            {chat.status === 'submitted' || chat.status === 'streaming' ? (
               <button
                 type='button'
-                onClick={() => stop()}
+                onClick={() => chat.stop()}
                 className='inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent'
               >
                 停止
               </button>
-            )}
+            ) : null}
           </form>
         </div>
       </div>
