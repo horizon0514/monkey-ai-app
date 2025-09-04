@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - v*.*.*
+  release:
+    types: [published]
+  create:
   workflow_dispatch:
 
 permissions:
@@ -68,9 +71,6 @@ jobs:
             dist/*.snap
             dist/*.deb
             dist/*.rpm
-            dist/*.tar.gz
-            dist/*.yml
-            dist/*.blockmap
 
       - name: Upload build artifacts (macOS)
         if: matrix.os == 'macos-latest'
@@ -79,9 +79,6 @@ jobs:
           name: dist-mac
           path: |
             dist/*.dmg
-            dist/*.zip
-            dist/*.yml
-            dist/*.blockmap
 
       - name: Upload build artifacts (Windows)
         if: matrix.os == 'windows-latest'
@@ -90,9 +87,6 @@ jobs:
           name: dist-win
           path: |
             dist/*.exe
-            dist/*.zip
-            dist/*.yml
-            dist/*.blockmap
 
   publish:
     name: Publish GitHub Release
@@ -113,14 +107,10 @@ jobs:
           draft: false
           files: |
             dist/*.exe
-            dist/*.zip
             dist/*.dmg
             dist/*.AppImage
             dist/*.snap
             dist/*.deb
             dist/*.rpm
-            dist/*.tar.gz
-            dist/*.yml
-            dist/*.blockmap
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
