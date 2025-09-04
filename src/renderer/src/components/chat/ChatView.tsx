@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@renderer/lib/utils'
-import { createOpenAI } from '@ai-sdk/openai'
+import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText } from 'ai'
 
 type Message = {
@@ -17,7 +17,7 @@ export const ChatView: React.FC = () => {
   const [selectedModel, setSelectedModel] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
   const [openrouter, setOpenrouter] = useState<
-    ReturnType<typeof createOpenAI> | null
+    ReturnType<typeof createOpenRouter> | null
   >(null)
 
   useEffect(() => {
@@ -27,13 +27,12 @@ export const ChatView: React.FC = () => {
       const llm = await window.electron.getLlmSettings()
       const apiKey = llm?.openrouter?.apiKey || ''
       const baseURL = llm?.openrouter?.baseUrl || 'https://openrouter.ai/api/v1'
-      // Use OpenAI provider configured for OpenRouter endpoint
+      // Use OpenRouter community provider
       setOpenrouter(
-        createOpenAI({
+        createOpenRouter({
           apiKey,
           baseURL,
           headers: {
-            // Optional headers recommended by OpenRouter
             'HTTP-Referer': 'chat-monkey',
             'X-Title': 'chat-monkey'
           }
