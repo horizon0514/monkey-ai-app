@@ -238,6 +238,11 @@ function setupIpcHandlers() {
     return windowManager?.getCurrentUrl()
   })
 
+  // 隐藏当前内嵌视图（用于展示内置 Chat/设置 等界面）
+  ipcMain.handle('hide-current-view', () => {
+    windowManager?.hideCurrentView()
+  })
+
   // LLM provider settings
   ipcMain.handle('get-llm-settings', () => {
     return store.get('llm') as LlmSettings
