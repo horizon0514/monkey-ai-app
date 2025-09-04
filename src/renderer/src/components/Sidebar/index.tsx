@@ -1,6 +1,13 @@
 import React from 'react'
 import { Tabs, TabsList, TabsTrigger } from '@renderer/components/ui/tabs'
-import { Bot, Brain, MessageSquare, LucideIcon, Settings, MessageCircle } from 'lucide-react'
+import {
+  Bot,
+  Brain,
+  MessageSquare,
+  LucideIcon,
+  Settings,
+  MessageCircle
+} from 'lucide-react'
 import { SiteConfig } from '../../../../shared/types'
 
 interface SidebarProps {
@@ -31,7 +38,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const items: Array<{ id: string; title: string; icon: LucideIcon }> = [
     { id: 'chat', title: 'Chat', icon: MessageCircle }
   ].concat(
-    sites.map(s => ({ id: s.id, title: s.title, icon: SITE_ICONS[s.id] || Bot }))
+    sites.map(s => ({
+      id: s.id,
+      title: s.title,
+      icon: SITE_ICONS[s.id] || Bot
+    }))
   )
 
   const currentValue = items.some(s => s.id === value)

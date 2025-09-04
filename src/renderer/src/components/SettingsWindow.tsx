@@ -84,7 +84,8 @@ export const SettingsModal: React.FC<SettingsProps> = ({
     window.electron.getLlmSettings().then((settings: LlmSettings) => {
       setLlmSettings(settings)
       const apiKey = settings?.openrouter?.apiKey || ''
-      const baseUrl = settings?.openrouter?.baseUrl || 'https://openrouter.ai/api/v1'
+      const baseUrl =
+        settings?.openrouter?.baseUrl || 'https://openrouter.ai/api/v1'
       setLlmDraft({ apiKey, baseUrl })
     })
   }, [])
@@ -379,10 +380,14 @@ export const SettingsModal: React.FC<SettingsProps> = ({
 
             {/* LLM Provider 设置 */}
             <div className='rounded-md border border-border/60 p-3'>
-              <div className='mb-2 text-sm font-medium'>LLM 配置（OpenRouter）</div>
+              <div className='mb-2 text-sm font-medium'>
+                LLM 配置（OpenRouter）
+              </div>
               <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>
                 <div className='flex flex-col gap-1.5'>
-                  <label className='text-xs text-muted-foreground'>Provider</label>
+                  <label className='text-xs text-muted-foreground'>
+                    Provider
+                  </label>
                   <input
                     value={'OpenRouter'}
                     disabled
@@ -390,21 +395,28 @@ export const SettingsModal: React.FC<SettingsProps> = ({
                   />
                 </div>
                 <div className='flex flex-col gap-1.5'>
-                  <label className='text-xs text-muted-foreground'>Base URL</label>
+                  <label className='text-xs text-muted-foreground'>
+                    Base URL
+                  </label>
                   <input
                     value={llmDraft.baseUrl}
-                    onChange={e => setLlmDraft(d => ({ ...d, baseUrl: e.target.value }))
+                    onChange={e =>
+                      setLlmDraft(d => ({ ...d, baseUrl: e.target.value }))
                     }
                     placeholder='https://openrouter.ai/api/v1'
                     className='rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring'
                   />
                 </div>
-                <div className='md:col-span-2 flex flex-col gap-1.5'>
-                  <label className='text-xs text-muted-foreground'>API Key</label>
+                <div className='flex flex-col gap-1.5 md:col-span-2'>
+                  <label className='text-xs text-muted-foreground'>
+                    API Key
+                  </label>
                   <input
                     type='password'
                     value={llmDraft.apiKey}
-                    onChange={e => setLlmDraft(d => ({ ...d, apiKey: e.target.value }))}
+                    onChange={e =>
+                      setLlmDraft(d => ({ ...d, apiKey: e.target.value }))
+                    }
                     placeholder='sk-or-v1-...'
                     className='rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring'
                   />
@@ -417,7 +429,9 @@ export const SettingsModal: React.FC<SettingsProps> = ({
                       provider: 'openrouter',
                       openrouter: {
                         apiKey: llmDraft.apiKey.trim(),
-                        baseUrl: llmDraft.baseUrl.trim() || 'https://openrouter.ai/api/v1'
+                        baseUrl:
+                          llmDraft.baseUrl.trim() ||
+                          'https://openrouter.ai/api/v1'
                       }
                     }
                     await window.electron.setLlmSettings(newSettings)
@@ -445,13 +459,19 @@ export const SettingsModal: React.FC<SettingsProps> = ({
                   获取模型列表
                 </button>
                 {isFetchingModels && (
-                  <span className='text-xs text-muted-foreground'>正在加载模型…</span>
+                  <span className='text-xs text-muted-foreground'>
+                    正在加载模型…
+                  </span>
                 )}
                 {modelsError && (
-                  <span className='text-xs text-destructive'>加载失败：{modelsError}</span>
+                  <span className='text-xs text-destructive'>
+                    加载失败：{modelsError}
+                  </span>
                 )}
                 {models.length > 0 && (
-                  <span className='text-xs text-muted-foreground'>已获取 {models.length} 个模型</span>
+                  <span className='text-xs text-muted-foreground'>
+                    已获取 {models.length} 个模型
+                  </span>
                 )}
               </div>
             </div>

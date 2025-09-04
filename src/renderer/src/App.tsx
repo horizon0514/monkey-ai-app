@@ -90,7 +90,12 @@ function App() {
         ) : selectedTab === 'chat' ? (
           <Topbar title='Chat' />
         ) : (
-          <Topbar tab={enabledSites.find(site => site.id === selectedTab) || enabledSites[0]} />
+          <Topbar
+            tab={
+              enabledSites.find(site => site.id === selectedTab) ||
+              enabledSites[0]
+            }
+          />
         )
       }
       onSidebarCollapsedChange={setIsSidebarCollapsed}

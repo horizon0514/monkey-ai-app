@@ -21,11 +21,14 @@ export class HonoServer {
     const app = new Hono()
 
     // CORS via official Hono middleware
-    app.use('*', cors({
-      origin: '*',
-      allowMethods: ['GET', 'POST', 'OPTIONS'],
-      allowHeaders: ['Content-Type', 'Authorization']
-    }))
+    app.use(
+      '*',
+      cors({
+        origin: '*',
+        allowMethods: ['GET', 'POST', 'OPTIONS'],
+        allowHeaders: ['Content-Type', 'Authorization']
+      })
+    )
 
     app.get('/health', c => c.json({ ok: true }))
 
@@ -40,7 +43,8 @@ export class HonoServer {
           provider: 'openrouter'
         }
         const apiKey = llm.openrouter?.apiKey || ''
-        const baseURL = llm.openrouter?.baseUrl || 'https://openrouter.ai/api/v1'
+        const baseURL =
+          llm.openrouter?.baseUrl || 'https://openrouter.ai/api/v1'
         if (!apiKey) {
           return c.json({ ok: false, error: 'MISSING_API_KEY' }, 400)
         }
@@ -73,19 +77,22 @@ export class HonoServer {
                     .join('')
                 : ''
             }))
-            const resp = await fetch(`${baseURL.replace(/\/$/, '')}/chat/completions`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${apiKey}`,
-                'HTTP-Referer': 'chat-monkey',
-                'X-Title': 'chat-monkey'
-              },
-              body: JSON.stringify({
-                model: modelId || 'openai/gpt-4o-mini',
-                messages: openAiMessages
-              })
-            })
+            const resp = await fetch(
+              `${baseURL.replace(/\/$/, '')}/chat/completions`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${apiKey}`,
+                  'HTTP-Referer': 'chat-monkey',
+                  'X-Title': 'chat-monkey'
+                },
+                body: JSON.stringify({
+                  model: modelId || 'openai/gpt-4o-mini',
+                  messages: openAiMessages
+                })
+              }
+            )
             if (!resp.ok) {
               const t = await resp.text()
               return c.json(
@@ -94,7 +101,10 @@ export class HonoServer {
               )
             }
             const json = (await resp.json()) as any
-            const content = json?.choices?.[0]?.message?.content || json?.choices?.[0]?.text || ''
+            const content =
+              json?.choices?.[0]?.message?.content ||
+              json?.choices?.[0]?.text ||
+              ''
             return c.json({ ok: true, text: String(content) })
           } catch (e2: any) {
             return c.json(
@@ -133,37 +143,46 @@ export class HonoServer {
           provider: 'openrouter'
         }
         const apiKey = llm.openrouter?.apiKey || ''
-        const baseURL = llm.openrouter?.baseUrl || 'https://openrouter.ai/api/v1'
+        const baseURL =
+          llm.openrouter?.baseUrl || 'https://openrouter.ai/api/v1'
         if (!apiKey) {
           return c.json({ ok: false, error: 'MISSING_API_KEY' }, 400)
         }
-
 
         const openrouter = createOpenRouter({
           apiKey,
           baseURL,
           headers: {
             'HTTP-Referer': 'chat-monkey',
-            'X-Title': 'chat-monkey',
+            'X-Title': 'chat-monkey'
           }
         })
 
         try {
-          console.log('About to call streamText with model:', modelId || 'openai/gpt-4o-mini')
+          console.log(
+            'About to call streamText with model:',
+            modelId || 'openai/gpt-4o-mini'
+          )
 
           const result = await streamText({
             model: openrouter(modelId || 'openai/gpt-4o-mini'),
             messages: coreMessages,
-            system: 'You are a helpful assistant that can answer questions and help with tasks',
+            system:
+              'You are a helpful assistant that can answer questions and help with tasks'
           })
 
           console.log('streamText result:', result)
-          console.log('streamText call => model:', modelId, 'messages:', coreMessages)
+          console.log(
+            'streamText call => model:',
+            modelId,
+            'messages:',
+            coreMessages
+          )
 
           // Return AI SDK UI message stream response for @ai-sdk/react useChat
           const response = result.toUIMessageStreamResponse({
             sendSources: true,
-            sendReasoning: true,
+            sendReasoning: true
           })
           return response
         } catch (err: any) {
@@ -197,4 +216,3 @@ export class HonoServer {
     return `http://127.0.0.1:${this.port}`
   }
 }
-

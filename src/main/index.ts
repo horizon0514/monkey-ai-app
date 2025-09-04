@@ -343,7 +343,9 @@ function setupIpcHandlers() {
       provider: 'openrouter'
     }
     const apiKey = llm.openrouter?.apiKey || ''
-    const baseUrl = (llm.openrouter?.baseUrl || 'https://openrouter.ai/api/v1').replace(/\/$/, '')
+    const baseUrl = (
+      llm.openrouter?.baseUrl || 'https://openrouter.ai/api/v1'
+    ).replace(/\/$/, '')
 
     if (!apiKey) {
       return { ok: false, error: 'MISSING_API_KEY' }
@@ -364,7 +366,11 @@ function setupIpcHandlers() {
       const models = Array.isArray(data?.data) ? data.data : []
       return { ok: true, models }
     } catch (error: any) {
-      return { ok: false, error: 'NETWORK_ERROR', detail: String(error?.message || error) }
+      return {
+        ok: false,
+        error: 'NETWORK_ERROR',
+        detail: String(error?.message || error)
+      }
     }
   })
 
@@ -388,7 +394,6 @@ function setupIpcHandlers() {
       }
     }
   )
-
 }
 
 // 应用退出前注销所有快捷键
