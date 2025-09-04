@@ -2961,6 +2961,11 @@ hasown@^2.0.0:
   dependencies:
     function-bind "^1.1.2"
 
+hono@^4.9.6:
+  version "4.9.6"
+  resolved "https://registry.yarnpkg.com/hono/-/hono-4.9.6.tgz#fe1f37ec78f574b9ddcffa1d79d399b3a8a12d31"
+  integrity sha512-doVjXhSFvYZ7y0dNokjwwSahcrAfdz+/BCLvAMa/vHLzjj8+CFyV5xteThGUsKdkaasgN+gF2mUxao+SGLpUeA==
+
 hosted-git-info@^4.1.0:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/hosted-git-info/-/hosted-git-info-4.1.0.tgz#827b82867e9ff1c8d0c4d9d53880397d2c86d224"

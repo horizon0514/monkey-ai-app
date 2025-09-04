@@ -74,6 +74,7 @@ const api = {
   goForward: () => ipcRenderer.invoke('go-forward'),
   getCurrentUrl: () => ipcRenderer.invoke('get-current-url'),
   hideCurrentView: () => ipcRenderer.invoke('hide-current-view'),
+  getLocalApiBase: () => ipcRenderer.invoke('get-local-api-base'),
   // LLM settings
   getLlmSettings: () => ipcRenderer.invoke('get-llm-settings'),
   setLlmSettings: (settings: unknown) =>

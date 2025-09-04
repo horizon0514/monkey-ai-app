@@ -23,6 +23,7 @@ declare global {
       goForward: () => Promise<void>
       getCurrentUrl: () => Promise<string | null>
       hideCurrentView: () => Promise<void>
+      getLocalApiBase: () => Promise<string>
       getLlmSettings: () => Promise<LlmSettings>
       setLlmSettings: (settings: LlmSettings) => Promise<void>
       fetchOpenRouterModels: () => Promise<

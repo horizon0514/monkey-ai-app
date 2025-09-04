@@ -13,6 +13,7 @@ import { createMenu } from './menu'
 import { WindowManager, WindowType } from './windowManager'
 import { bootup } from './bootup'
 import { SiteConfig, LlmSettings } from '../shared/types'
+import { HonoServer } from './honoServer'
 import Store from 'electron-store'
 
 // 初始化 electron-store
@@ -20,6 +21,7 @@ Store.initRenderer()
 
 let mainWindow: BrowserWindow | null = null
 let windowManager: WindowManager | null = null
+let honoServer: HonoServer | null = null
 
 // 创建配置存储实例
 const store = new Store({
@@ -111,6 +113,10 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.electron')
 
   createWindow()
+
+  // Start local Hono server for chat API
+  honoServer = new HonoServer(3399)
+  honoServer.start()
 
   // 监控窗口加载完成时间
   const mainWindow = windowManager?.getWindow(WindowType.MAIN)
@@ -236,6 +242,11 @@ function setupIpcHandlers() {
   })
   ipcMain.handle('get-current-url', () => {
     return windowManager?.getCurrentUrl()
+  })
+
+  // 返回本地 API 基地址
+  ipcMain.handle('get-local-api-base', () => {
+    return honoServer?.getBaseURL() || 'http://127.0.0.1:3399'
   })
 
   // 隐藏当前内嵌视图（用于展示内置 Chat/设置 等界面）

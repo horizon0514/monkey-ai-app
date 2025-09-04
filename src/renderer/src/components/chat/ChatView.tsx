@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@renderer/lib/utils'
-import { createOpenRouter } from '@openrouter/ai-sdk-provider'
-import { generateText } from 'ai'
+// Using local Hono backend instead of client-side provider to avoid environment issues
 
 type Message = {
   id: string
@@ -16,28 +15,13 @@ export const ChatView: React.FC = () => {
   const [models, setModels] = useState<any[]>([])
   const [selectedModel, setSelectedModel] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
-  const [openrouter, setOpenrouter] = useState<
-    ReturnType<typeof createOpenRouter> | null
-  >(null)
+  const [apiBase, setApiBase] = useState<string>('http://127.0.0.1:3399')
 
   useEffect(() => {
     let mounted = true
     ;(async () => {
-      // setup client from settings
-      const llm = await window.electron.getLlmSettings()
-      const apiKey = llm?.openrouter?.apiKey || ''
-      const baseURL = llm?.openrouter?.baseUrl || 'https://openrouter.ai/api/v1'
-      // Use OpenRouter community provider
-      setOpenrouter(
-        createOpenRouter({
-          apiKey,
-          baseURL,
-          headers: {
-            'HTTP-Referer': 'chat-monkey',
-            'X-Title': 'chat-monkey'
-          }
-        })
-      )
+      const base = await window.electron.getLocalApiBase()
+      setApiBase(base)
 
       const res = await window.electron.fetchOpenRouterModels()
       if (!mounted) return
@@ -62,21 +46,23 @@ export const ChatView: React.FC = () => {
     setInput('')
 
     try {
-      if (!openrouter) {
-        throw new Error('LLM 尚未初始化')
-      }
       const conversation = messages
         .concat([{ id: 'temp', role: 'user', content: text }])
         .map(m => ({ role: m.role, content: m.content }))
 
-      const result = await generateText({
-        model: openrouter(selectedModel),
-        messages: conversation as any
+      const res = await fetch(`${apiBase}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: selectedModel, messages: conversation })
       })
+      const data = await res.json()
+      if (!data?.ok) {
+        throw new Error(data?.error || 'UNKNOWN')
+      }
       const reply: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: result.text
+        content: data.text
       }
       setMessages(prev => [...prev, reply])
     } catch (e: any) {
