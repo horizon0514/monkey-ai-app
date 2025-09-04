@@ -16,6 +16,7 @@ export const ChatView: React.FC = () => {
   const [selectedModel, setSelectedModel] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
   const [apiBase, setApiBase] = useState<string>('http://127.0.0.1:3399')
+  const abortRef = React.useRef<AbortController | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -53,25 +54,38 @@ export const ChatView: React.FC = () => {
         .concat([{ id: 'temp', role: 'user', content: text }])
         .map(m => ({ role: m.role, content: m.content }))
 
-      const res = await fetch(`${apiBase}/chat`, {
+      const controller = new AbortController()
+      abortRef.current = controller
+      const res = await fetch(`${apiBase}/chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: selectedModel, messages: conversation })
+        body: JSON.stringify({ model: selectedModel, messages: conversation }),
+        signal: controller.signal
       })
-      const data = await res.json()
-      if (!data?.ok) {
-        throw new Error(data?.error || 'UNKNOWN')
+      if (!res.ok || !res.body) {
+        const textErr = await res.text().catch(() => '')
+        throw new Error(textErr || `HTTP_${res.status}`)
       }
-      const reply: Message = {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: data.text
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let acc = ''
+      const replyId = crypto.randomUUID()
+      setMessages(prev => [...prev, { id: replyId, role: 'assistant', content: '' }])
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+        const chunk = decoder.decode(value)
+        acc += chunk
+        setMessages(prev =>
+          prev.map(m => (m.id === replyId ? { ...m, content: acc } : m))
+        )
       }
-      setMessages(prev => [...prev, reply])
     } catch (e: any) {
       setError(String(e?.message || e))
     } finally {
       setIsSending(false)
+      abortRef.current = null
     }
   }
 
@@ -136,6 +150,14 @@ export const ChatView: React.FC = () => {
           >
             发送
           </button>
+          {isSending && (
+            <button
+              onClick={() => abortRef.current?.abort()}
+              className='inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent'
+            >
+              停止
+            </button>
+          )}
         </div>
       </div>
     </div>

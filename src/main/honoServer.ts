@@ -3,7 +3,7 @@ import { serve } from '@hono/node-server'
 import { LlmSettings } from '../shared/types'
 import Store from 'electron-store'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
-import { generateText } from 'ai'
+import { generateText, streamText } from 'ai'
 
 export class HonoServer {
   private server: unknown | null = null
@@ -99,6 +99,64 @@ export class HonoServer {
               500
             )
           }
+        }
+      } catch (e: any) {
+        return c.json(
+          { ok: false, error: 'SERVER_ERROR', detail: String(e?.message || e) },
+          500
+        )
+      }
+    })
+
+    app.post('/chat/stream', async c => {
+      try {
+        const body = await c.req.json()
+        const messages = Array.isArray(body?.messages) ? body.messages : []
+        const modelId = typeof body?.model === 'string' ? body.model : undefined
+
+        const llm = (this.store.get('llm') as LlmSettings) || {
+          provider: 'openrouter'
+        }
+        const apiKey = llm.openrouter?.apiKey || ''
+        const baseURL = llm.openrouter?.baseUrl || 'https://openrouter.ai/api/v1'
+        if (!apiKey) {
+          return c.json({ ok: false, error: 'MISSING_API_KEY' }, 400)
+        }
+
+        const openrouter = createOpenRouter({
+          apiKey,
+          baseURL,
+          headers: {
+            'HTTP-Referer': 'chat-monkey',
+            'X-Title': 'chat-monkey'
+          }
+        })
+
+        try {
+          const result = await streamText({
+            model: openrouter(modelId || 'openai/gpt-4o-mini'),
+            messages
+          } as any)
+
+          // Return a plain text stream of tokens
+          return new Response(result.textStream as any, {
+            headers: {
+              'Content-Type': 'text/plain; charset=utf-8',
+              'Cache-Control': 'no-cache'
+            }
+          })
+        } catch (err: any) {
+          // Fallback: non-stream with generateText
+          const result = await generateText({
+            model: openrouter(modelId || 'openai/gpt-4o-mini'),
+            messages
+          } as any)
+          return new Response(result.text, {
+            headers: {
+              'Content-Type': 'text/plain; charset=utf-8',
+              'X-Fallback': 'generateText'
+            }
+          })
         }
       } catch (e: any) {
         return c.json(
