@@ -55,12 +55,49 @@ export class HonoServer {
           }
         })
 
-        const result = await generateText({
-          model: openrouter(modelId || 'openai/gpt-4o-mini'),
-          messages
-        } as any)
-
-        return c.json({ ok: true, text: result.text })
+        try {
+          const result = await generateText({
+            model: openrouter(modelId || 'openai/gpt-4o-mini'),
+            messages
+          } as any)
+          return c.json({ ok: true, text: result.text })
+        } catch (err: any) {
+          // Fallback: direct fetch if provider schema validation fails for some upstreams
+          try {
+            const resp = await fetch(`${baseURL.replace(/\/$/, '')}/chat/completions`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${apiKey}`,
+                'HTTP-Referer': 'chat-monkey',
+                'X-Title': 'chat-monkey'
+              },
+              body: JSON.stringify({
+                model: modelId || 'openai/gpt-4o-mini',
+                messages
+              })
+            })
+            if (!resp.ok) {
+              const t = await resp.text()
+              return c.json(
+                { ok: false, error: `HTTP_${resp.status}`, detail: t },
+                resp.status
+              )
+            }
+            const json = (await resp.json()) as any
+            const content = json?.choices?.[0]?.message?.content || json?.choices?.[0]?.text || ''
+            return c.json({ ok: true, text: String(content) })
+          } catch (e2: any) {
+            return c.json(
+              {
+                ok: false,
+                error: 'FALLBACK_FAILED',
+                detail: String(e2?.message || e2)
+              },
+              500
+            )
+          }
+        }
       } catch (e: any) {
         return c.json(
           { ok: false, error: 'SERVER_ERROR', detail: String(e?.message || e) },
