@@ -73,6 +73,11 @@ const api = {
   goBack: () => ipcRenderer.invoke('go-back'),
   goForward: () => ipcRenderer.invoke('go-forward'),
   getCurrentUrl: () => ipcRenderer.invoke('get-current-url'),
+  // LLM settings
+  getLlmSettings: () => ipcRenderer.invoke('get-llm-settings'),
+  setLlmSettings: (settings: unknown) =>
+    ipcRenderer.invoke('set-llm-settings', settings),
+  fetchOpenRouterModels: () => ipcRenderer.invoke('fetch-openrouter-models'),
   ipcRenderer: {
     send: (channel: string, data: unknown) => {
       ipcRenderer.send(channel, data)

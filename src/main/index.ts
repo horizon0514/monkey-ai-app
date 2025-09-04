@@ -12,7 +12,7 @@ import icon from '../../resources/icon.png?asset'
 import { createMenu } from './menu'
 import { WindowManager, WindowType } from './windowManager'
 import { bootup } from './bootup'
-import { SiteConfig } from '../shared/types'
+import { SiteConfig, LlmSettings } from '../shared/types'
 import Store from 'electron-store'
 
 // 初始化 electron-store
@@ -25,7 +25,14 @@ let windowManager: WindowManager | null = null
 const store = new Store({
   name: 'site-configs',
   defaults: {
-    sites: []
+    sites: [],
+    llm: {
+      provider: 'openrouter',
+      openrouter: {
+        apiKey: '',
+        baseUrl: 'https://openrouter.ai/api/v1'
+      }
+    } as LlmSettings
   }
 })
 
@@ -229,6 +236,49 @@ function setupIpcHandlers() {
   })
   ipcMain.handle('get-current-url', () => {
     return windowManager?.getCurrentUrl()
+  })
+
+  // LLM provider settings
+  ipcMain.handle('get-llm-settings', () => {
+    return store.get('llm') as LlmSettings
+  })
+
+  ipcMain.handle('set-llm-settings', (_evt, settings: LlmSettings) => {
+    store.set('llm', settings)
+    // 通知所有窗口 LLM 设置已更改（如需）
+    BrowserWindow.getAllWindows().forEach(window => {
+      window.webContents.send('llm-settings-changed')
+    })
+  })
+
+  ipcMain.handle('fetch-openrouter-models', async () => {
+    const llm = (store.get('llm') as LlmSettings) || {
+      provider: 'openrouter'
+    }
+    const apiKey = llm.openrouter?.apiKey || ''
+    const baseUrl = (llm.openrouter?.baseUrl || 'https://openrouter.ai/api/v1').replace(/\/$/, '')
+
+    if (!apiKey) {
+      return { ok: false, error: 'MISSING_API_KEY' }
+    }
+
+    try {
+      const res = await fetch(`${baseUrl}/models`, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`
+        }
+      })
+      if (!res.ok) {
+        const text = await res.text()
+        return { ok: false, error: `HTTP_${res.status}`, detail: text }
+      }
+      const data = await res.json()
+      // OpenRouter returns { data: Model[] }
+      const models = Array.isArray(data?.data) ? data.data : []
+      return { ok: true, models }
+    } catch (error: any) {
+      return { ok: false, error: 'NETWORK_ERROR', detail: String(error?.message || error) }
+    }
   })
 
   // 监听主题变化
