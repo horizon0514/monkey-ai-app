@@ -15,7 +15,7 @@ import {
   X
 } from 'lucide-react'
 import { Theme } from '@renderer/types/theme'
-import { SiteConfig } from '../../../shared/types'
+import { SiteConfig, LlmSettings } from '../../../shared/types'
 import { defaultSites } from '../../../shared/defaultSites'
 
 type SettingsProps = {
@@ -47,6 +47,16 @@ export const SettingsModal: React.FC<SettingsProps> = ({
     external: boolean
   }>({ title: '', url: '', external: false })
 
+  // LLM 配置
+  const [llmSettings, setLlmSettings] = useState<LlmSettings | null>(null)
+  const [llmDraft, setLlmDraft] = useState<{
+    apiKey: string
+    baseUrl: string
+  }>({ apiKey: '', baseUrl: 'https://openrouter.ai/api/v1' })
+  const [models, setModels] = useState<any[]>([])
+  const [isFetchingModels, setIsFetchingModels] = useState(false)
+  const [modelsError, setModelsError] = useState<string | null>(null)
+
   const appearanceRef = useRef<HTMLDivElement | null>(null)
   const assistantsRef = useRef<HTMLDivElement | null>(null)
   const aboutRef = useRef<HTMLDivElement | null>(null)
@@ -65,6 +75,16 @@ export const SettingsModal: React.FC<SettingsProps> = ({
         s => ({ ...s })
       )
       setSites(list)
+    })
+  }, [])
+
+  // 读取 LLM 配置
+  useEffect(() => {
+    window.electron.getLlmSettings().then((settings: LlmSettings) => {
+      setLlmSettings(settings)
+      const apiKey = settings?.openrouter?.apiKey || ''
+      const baseUrl = settings?.openrouter?.baseUrl || 'https://openrouter.ai/api/v1'
+      setLlmDraft({ apiKey, baseUrl })
     })
   }, [])
 
@@ -355,6 +375,85 @@ export const SettingsModal: React.FC<SettingsProps> = ({
             <p className='text-sm text-muted-foreground'>
               自定义你想要使用的助手（名称、URL、启用状态、顺序）。
             </p>
+
+            {/* LLM Provider 设置 */}
+            <div className='rounded-md border border-border/60 p-3'>
+              <div className='mb-2 text-sm font-medium'>LLM 配置（OpenRouter）</div>
+              <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>
+                <div className='flex flex-col gap-1.5'>
+                  <label className='text-xs text-muted-foreground'>Provider</label>
+                  <input
+                    value={'OpenRouter'}
+                    disabled
+                    className='rounded-md border border-input bg-muted/30 px-3 py-2 text-sm outline-none'
+                  />
+                </div>
+                <div className='flex flex-col gap-1.5'>
+                  <label className='text-xs text-muted-foreground'>Base URL</label>
+                  <input
+                    value={llmDraft.baseUrl}
+                    onChange={e => setLlmDraft(d => ({ ...d, baseUrl: e.target.value }))
+                    }
+                    placeholder='https://openrouter.ai/api/v1'
+                    className='rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring'
+                  />
+                </div>
+                <div className='md:col-span-2 flex flex-col gap-1.5'>
+                  <label className='text-xs text-muted-foreground'>API Key</label>
+                  <input
+                    type='password'
+                    value={llmDraft.apiKey}
+                    onChange={e => setLlmDraft(d => ({ ...d, apiKey: e.target.value }))}
+                    placeholder='sk-or-v1-...'
+                    className='rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring'
+                  />
+                </div>
+              </div>
+              <div className='mt-3 flex items-center gap-2'>
+                <button
+                  onClick={async () => {
+                    const newSettings: LlmSettings = {
+                      provider: 'openrouter',
+                      openrouter: {
+                        apiKey: llmDraft.apiKey.trim(),
+                        baseUrl: llmDraft.baseUrl.trim() || 'https://openrouter.ai/api/v1'
+                      }
+                    }
+                    await window.electron.setLlmSettings(newSettings)
+                    setLlmSettings(newSettings)
+                  }}
+                  className='inline-flex items-center justify-center whitespace-nowrap rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground'
+                >
+                  保存
+                </button>
+                <button
+                  onClick={async () => {
+                    setIsFetchingModels(true)
+                    setModelsError(null)
+                    setModels([])
+                    const res = await window.electron.fetchOpenRouterModels()
+                    setIsFetchingModels(false)
+                    if (!res.ok) {
+                      setModelsError(res.error)
+                    } else {
+                      setModels(res.models)
+                    }
+                  }}
+                  className='inline-flex items-center justify-center whitespace-nowrap rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground'
+                >
+                  获取模型列表
+                </button>
+                {isFetchingModels && (
+                  <span className='text-xs text-muted-foreground'>正在加载模型…</span>
+                )}
+                {modelsError && (
+                  <span className='text-xs text-destructive'>加载失败：{modelsError}</span>
+                )}
+                {models.length > 0 && (
+                  <span className='text-xs text-muted-foreground'>已获取 {models.length} 个模型</span>
+                )}
+              </div>
+            </div>
 
             {/* 新增按钮 */}
             {!isAdding ? (

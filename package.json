@@ -23,11 +23,13 @@
     "build:linux": "rimraf dist && npm run build && electron-builder --linux --config"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^2.0.23",
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
     "@radix-ui/react-icons": "^1.3.2",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-tabs": "^1.1.11",
+    "ai": "^5.0.30",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "electron-store": "8.1.0",

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react'
+import { ChatView } from '../chat/ChatView'
 
 interface MainContentProps {
   selectedTab: string
@@ -6,9 +7,19 @@ interface MainContentProps {
 
 export const MainContent: React.FC<MainContentProps> = ({ selectedTab }) => {
   useEffect(() => {
-    window.electron.switchTab(selectedTab)
+    if (selectedTab !== 'chat') {
+      window.electron.switchTab(selectedTab)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [selectedTab])
+
+  if (selectedTab === 'chat') {
+    return (
+      <main className='flex-1 overflow-hidden'>
+        <ChatView />
+      </main>
+    )
+  }
 
   return <main className='flex-1 overflow-hidden' />
 }
