@@ -9,7 +9,7 @@ import { SettingsModal } from './components/SettingsWindow'
 
 function App() {
   const [sites, setSites] = useState<SiteConfig[]>(defaultSites)
-  const [selectedTab, setSelectedTab] = useState(defaultSites[0].id)
+  const [selectedTab, setSelectedTab] = useState<'chat' | string>('chat')
   const [, setIsSidebarCollapsed] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
 
@@ -20,6 +20,9 @@ function App() {
       setSites(configs)
 
       // 如果当前选中的站点被禁用，切换到第一个启用的站点
+      if (selectedTab === 'chat') {
+        return
+      }
       const currentSite = configs.find(site => site.id === selectedTab)
       if (!currentSite?.enabled) {
         const firstEnabledSite = configs.find(site => site.enabled)
@@ -55,16 +58,24 @@ function App() {
       sidebar={
         <Sidebar
           value={selectedTab}
-          onTabChange={tab => {
+          onTabChange={async tab => {
             setShowSettings(false)
             setSelectedTab(tab)
-            window.electron.switchTab(tab)
+            if (tab === 'chat') {
+              await window.electron.hideCurrentView()
+            } else {
+              window.electron.switchTab(tab)
+            }
           }}
-          onTabClick={tab => {
+          onTabClick={async tab => {
             // 即使重复点击同一项，也确保关闭设置并刷新该视图
             if (showSettings) setShowSettings(false)
             setSelectedTab(tab)
-            window.electron.switchTab(tab)
+            if (tab === 'chat') {
+              await window.electron.hideCurrentView()
+            } else {
+              window.electron.switchTab(tab)
+            }
           }}
           sites={enabledSites}
           onOpenSettings={() => {
@@ -76,6 +87,8 @@ function App() {
       topbar={
         showSettings ? (
           <Topbar title='设置' />
+        ) : selectedTab === 'chat' ? (
+          <Topbar title='Chat' />
         ) : (
           <Topbar
             tab={

@@ -1,58 +1,6 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
 
-// 修改 navigator 属性
-const modifyNavigator = () => {
-  const platform = process.platform === 'darwin' ? 'macOS' : 'Windows'
-  const chromeVersion = '120.0.0.0'
-  const userAgent = `Mozilla/5.0 (${platform === 'macOS' ? 'Macintosh; Intel Mac OS X 10_15_7' : 'Windows NT 10.0; Win64; x64'}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion} Safari/537.36`
-
-  try {
-    Object.defineProperties(navigator, {
-      userAgent: {
-        value: userAgent,
-        configurable: false,
-        writable: false
-      },
-      appVersion: {
-        value: userAgent.substring(8),
-        configurable: false,
-        writable: false
-      },
-      platform: {
-        value: platform === 'macOS' ? 'MacIntel' : 'Win32',
-        configurable: false,
-        writable: false
-      },
-      vendor: {
-        value: 'Google Inc.',
-        configurable: false,
-        writable: false
-      }
-    })
-
-    // 修改 navigator.userAgentData
-    if (!(navigator as any).userAgentData) {
-      Object.defineProperty(navigator, 'userAgentData', {
-        value: {
-          brands: [
-            { brand: 'Chromium', version: chromeVersion.split('.')[0] },
-            { brand: 'Google Chrome', version: chromeVersion.split('.')[0] },
-            { brand: 'Not=A?Brand', version: '24' }
-          ],
-          mobile: false,
-          platform: platform
-        },
-        configurable: false,
-        writable: false
-      })
-    }
-  } catch (e) {
-    console.error('Failed to modify navigator properties:', e)
-  }
-}
-
-// 在页面加载完成后执行修改
-document.addEventListener('DOMContentLoaded', modifyNavigator)
+// 删除对 navigator 的原型修改，避免 Illegal invocation 错误
 
 // Custom APIs for renderer
 const api = {
@@ -73,6 +21,13 @@ const api = {
   goBack: () => ipcRenderer.invoke('go-back'),
   goForward: () => ipcRenderer.invoke('go-forward'),
   getCurrentUrl: () => ipcRenderer.invoke('get-current-url'),
+  hideCurrentView: () => ipcRenderer.invoke('hide-current-view'),
+  getLocalApiBase: () => ipcRenderer.invoke('get-local-api-base'),
+  // LLM settings
+  getLlmSettings: () => ipcRenderer.invoke('get-llm-settings'),
+  setLlmSettings: (settings: unknown) =>
+    ipcRenderer.invoke('set-llm-settings', settings),
+  fetchOpenRouterModels: () => ipcRenderer.invoke('fetch-openrouter-models'),
   ipcRenderer: {
     send: (channel: string, data: unknown) => {
       ipcRenderer.send(channel, data)

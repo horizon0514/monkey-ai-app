@@ -1,6 +1,13 @@
 import React from 'react'
 import { Tabs, TabsList, TabsTrigger } from '@renderer/components/ui/tabs'
-import { Bot, Brain, MessageSquare, LucideIcon, Settings } from 'lucide-react'
+import {
+  Bot,
+  Brain,
+  MessageSquare,
+  LucideIcon,
+  Settings,
+  MessageCircle
+} from 'lucide-react'
 import { SiteConfig } from '../../../../shared/types'
 
 interface SidebarProps {
@@ -28,9 +35,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   sites,
   onOpenSettings
 }) => {
-  const currentValue = sites.some(s => s.id === value)
+  const items: Array<{ id: string; title: string; icon: LucideIcon }> = [
+    { id: 'chat', title: 'Chat', icon: MessageCircle }
+  ].concat(
+    sites.map(s => ({
+      id: s.id,
+      title: s.title,
+      icon: SITE_ICONS[s.id] || Bot
+    }))
+  )
+
+  const currentValue = items.some(s => s.id === value)
     ? value
-    : sites[0]?.id || ''
+    : items[0]?.id || ''
   const handleSettingsClick = () => {
     if (onOpenSettings) {
       onOpenSettings()
@@ -54,13 +71,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className='h-full'
         >
           <TabsList className='flex h-auto flex-col space-y-1 bg-transparent px-2'>
-            {sites.map(site => {
-              const Icon = SITE_ICONS[site.id] || Bot
+            {items.map(item => {
+              const Icon = item.icon
               return (
                 <TabsTrigger
-                  key={site.id}
-                  value={site.id}
-                  onClick={() => onTabClick?.(site.id)}
+                  key={item.id}
+                  value={item.id}
+                  onClick={() => onTabClick?.(item.id)}
                   className='group relative justify-start gap-3 px-4 py-2.5 text-sm font-medium transition-all no-drag hover:bg-muted/50 data-[state=active]:bg-primary/10 data-[state=active]:text-primary'
                 >
                   <Icon
@@ -68,7 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     className='shrink-0 transition-transform group-hover:scale-110 group-data-[state=active]:text-primary'
                   />
                   <span className='transition-colors group-hover:text-foreground/90'>
-                    {site.title}
+                    {item.title}
                   </span>
                 </TabsTrigger>
               )

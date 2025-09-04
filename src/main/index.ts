@@ -12,25 +12,62 @@ import icon from '../../resources/icon.png?asset'
 import { createMenu } from './menu'
 import { WindowManager, WindowType } from './windowManager'
 import { bootup } from './bootup'
-import { SiteConfig } from '../shared/types'
+import { SiteConfig, LlmSettings } from '../shared/types'
+import { HonoServer } from './honoServer'
 import Store from 'electron-store'
 
 // 初始化 electron-store
 Store.initRenderer()
 
+// 降低/关闭 Chromium 控制台噪声（需在 app ready 之前设置）
+app.commandLine.appendSwitch('disable-logging')
+app.commandLine.appendSwitch('log-level', '3') // 仅 Error 及以上
+
 let mainWindow: BrowserWindow | null = null
 let windowManager: WindowManager | null = null
+let honoServer: HonoServer | null = null
+let ipcHandlersRegistered = false
+
+// 全局错误处理，避免未捕获的 Promise 抛出警告并便于排查
+process.on('unhandledRejection', reason => {
+  // eslint-disable-next-line no-console
+  console.error('Unhandled Rejection:', reason)
+})
+process.on('uncaughtException', error => {
+  // eslint-disable-next-line no-console
+  console.error('Uncaught Exception:', error)
+})
 
 // 创建配置存储实例
 const store = new Store({
   name: 'site-configs',
   defaults: {
-    sites: []
+    sites: [],
+    llm: {
+      provider: 'openrouter',
+      openrouter: {
+        apiKey: '',
+        baseUrl: 'https://openrouter.ai/api/v1'
+      }
+    } as LlmSettings
   }
 })
 
 // 添加启动时间监控
 const startupTime = Date.now()
+
+// 确保应用单实例运行，避免使用同一分区导致 IndexedDB LOCK
+const gotTheLock = app.requestSingleInstanceLock()
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+    }
+  })
+}
 
 function createWindow() {
   // Create the browser window.
@@ -105,6 +142,10 @@ app.whenReady().then(() => {
 
   createWindow()
 
+  // Start local Hono server for chat API
+  honoServer = new HonoServer(3399)
+  honoServer.start()
+
   // 监控窗口加载完成时间
   const mainWindow = windowManager?.getWindow(WindowType.MAIN)
   mainWindow?.webContents.once('did-finish-load', () => {
@@ -139,11 +180,55 @@ app.whenReady().then(() => {
   })
 
   // Setup IPC handlers
-  setupIpcHandlers()
+  if (!ipcHandlersRegistered) {
+    setupIpcHandlers()
+    ipcHandlersRegistered = true
+  }
 })
 
 // 将 IPC 处理程序移到单独的函数中
 function setupIpcHandlers() {
+  // 防止开发时热重载导致重复注册：先清理已存在的 handler/listener
+  const handleChannels = [
+    'switch-tab',
+    'get-site-configs',
+    'set-site-configs',
+    'open-settings',
+    'close-settings',
+    'open-external-url',
+    'get-navigation-state',
+    'go-back',
+    'go-forward',
+    'get-current-url',
+    'get-local-api-base',
+    'hide-current-view',
+    'get-llm-settings',
+    'set-llm-settings',
+    'fetch-openrouter-models',
+    'set-theme',
+    'get-theme',
+    'get-effective-theme'
+  ] as const
+  const onChannels = [
+    'sidebar-resize',
+    'layout-resize',
+    'hide-quick-window'
+  ] as const
+
+  for (const ch of handleChannels) {
+    try {
+      ipcMain.removeHandler(ch as any)
+    } catch (e) {
+      // ignore
+    }
+  }
+  for (const ch of onChannels) {
+    try {
+      ipcMain.removeAllListeners(ch)
+    } catch (e) {
+      // ignore
+    }
+  }
   ipcMain.handle('switch-tab', async (_, tab: string) => {
     if (!windowManager) return
 
@@ -180,7 +265,6 @@ function setupIpcHandlers() {
   // 处理网站配置
   ipcMain.handle('get-site-configs', () => {
     if (!windowManager) return []
-    console.log('get-site-configs', windowManager.getSiteConfigs())
     return windowManager.getSiteConfigs()
   })
 
@@ -229,6 +313,65 @@ function setupIpcHandlers() {
   })
   ipcMain.handle('get-current-url', () => {
     return windowManager?.getCurrentUrl()
+  })
+
+  // 返回本地 API 基地址
+  ipcMain.handle('get-local-api-base', () => {
+    return honoServer?.getBaseURL() || 'http://127.0.0.1:3399'
+  })
+
+  // 隐藏当前内嵌视图（用于展示内置 Chat/设置 等界面）
+  ipcMain.handle('hide-current-view', () => {
+    windowManager?.hideCurrentView()
+  })
+
+  // LLM provider settings
+  ipcMain.handle('get-llm-settings', () => {
+    return store.get('llm') as LlmSettings
+  })
+
+  ipcMain.handle('set-llm-settings', (_evt, settings: LlmSettings) => {
+    store.set('llm', settings)
+    // 通知所有窗口 LLM 设置已更改（如需）
+    BrowserWindow.getAllWindows().forEach(window => {
+      window.webContents.send('llm-settings-changed')
+    })
+  })
+
+  ipcMain.handle('fetch-openrouter-models', async () => {
+    const llm = (store.get('llm') as LlmSettings) || {
+      provider: 'openrouter'
+    }
+    const apiKey = llm.openrouter?.apiKey || ''
+    const baseUrl = (
+      llm.openrouter?.baseUrl || 'https://openrouter.ai/api/v1'
+    ).replace(/\/$/, '')
+
+    if (!apiKey) {
+      return { ok: false, error: 'MISSING_API_KEY' }
+    }
+
+    try {
+      const res = await fetch(`${baseUrl}/models`, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`
+        }
+      })
+      if (!res.ok) {
+        const text = await res.text()
+        return { ok: false, error: `HTTP_${res.status}`, detail: text }
+      }
+      const data = await res.json()
+      // OpenRouter returns { data: Model[] }
+      const models = Array.isArray(data?.data) ? data.data : []
+      return { ok: true, models }
+    } catch (error: any) {
+      return {
+        ok: false,
+        error: 'NETWORK_ERROR',
+        detail: String(error?.message || error)
+      }
+    }
   })
 
   // 监听主题变化

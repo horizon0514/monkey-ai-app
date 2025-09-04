@@ -488,8 +488,18 @@ export class SideViewManager {
 
   private emitNavigationState(view: WebContentsView) {
     try {
-      const canGoBack = view.webContents.canGoBack()
-      const canGoForward = view.webContents.canGoForward()
+      const wc: any = view.webContents as any
+      const nav = wc.navigationHistory
+      const canGoBack = nav
+        ? typeof nav.canGoBack === 'function'
+          ? nav.canGoBack()
+          : Boolean(nav.canGoBack)
+        : wc.canGoBack()
+      const canGoForward = nav
+        ? typeof nav.canGoForward === 'function'
+          ? nav.canGoForward()
+          : Boolean(nav.canGoForward)
+        : wc.canGoForward()
       this.mainWindow.webContents.send('navigation-state-changed', {
         canGoBack,
         canGoForward
@@ -504,10 +514,19 @@ export class SideViewManager {
     const currentView = this.sideViews.get(this.currentViewId)
     if (!currentView) return { canGoBack: false, canGoForward: false }
     try {
-      return {
-        canGoBack: currentView.view.webContents.canGoBack(),
-        canGoForward: currentView.view.webContents.canGoForward()
-      }
+      const wc: any = currentView.view.webContents as any
+      const nav = wc.navigationHistory
+      const canGoBack = nav
+        ? typeof nav.canGoBack === 'function'
+          ? nav.canGoBack()
+          : Boolean(nav.canGoBack)
+        : wc.canGoBack()
+      const canGoForward = nav
+        ? typeof nav.canGoForward === 'function'
+          ? nav.canGoForward()
+          : Boolean(nav.canGoForward)
+        : wc.canGoForward()
+      return { canGoBack, canGoForward }
     } catch {
       return { canGoBack: false, canGoForward: false }
     }

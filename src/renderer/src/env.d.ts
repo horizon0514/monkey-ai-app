@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import { Theme } from './types/theme'
-import { SiteConfig } from '../../../shared/types'
+import { SiteConfig, LlmSettings } from '../../../shared/types'
 
 declare global {
   interface Window {
@@ -22,6 +22,14 @@ declare global {
       goBack: () => Promise<void>
       goForward: () => Promise<void>
       getCurrentUrl: () => Promise<string | null>
+      hideCurrentView: () => Promise<void>
+      getLocalApiBase: () => Promise<string>
+      getLlmSettings: () => Promise<LlmSettings>
+      setLlmSettings: (settings: LlmSettings) => Promise<void>
+      fetchOpenRouterModels: () => Promise<
+        | { ok: true; models: unknown[] }
+        | { ok: false; error: string; detail?: string }
+      >
       ipcRenderer: {
         send: (channel: string, data: unknown) => void
         on: (
@@ -39,3 +47,5 @@ declare global {
     }
   }
 }
+
+// remove legacy ai/react declaration; using @ai-sdk/react
