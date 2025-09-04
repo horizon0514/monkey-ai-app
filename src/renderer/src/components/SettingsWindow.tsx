@@ -48,7 +48,7 @@ export const SettingsModal: React.FC<SettingsProps> = ({
   }>({ title: '', url: '', external: false })
 
   // LLM 配置
-  const [llmSettings, setLlmSettings] = useState<LlmSettings | null>(null)
+  const [, setLlmSettings] = useState<LlmSettings | null>(null)
   const [llmDraft, setLlmDraft] = useState<{
     apiKey: string
     baseUrl: string

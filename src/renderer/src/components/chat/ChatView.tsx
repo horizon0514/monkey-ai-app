@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { cn } from '@renderer/lib/utils'
 // Using local Hono backend instead of client-side provider to avoid environment issues
 
@@ -12,7 +12,7 @@ export const ChatView: React.FC = () => {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [isSending, setIsSending] = useState(false)
-  const [models, setModels] = useState<any[]>([])
+  const [models, setModels] = useState<Array<{ id?: string; name?: string }>>([])
   const [selectedModel, setSelectedModel] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
   const [apiBase, setApiBase] = useState<string>('http://127.0.0.1:3399')
@@ -26,9 +26,12 @@ export const ChatView: React.FC = () => {
       const res = await window.electron.fetchOpenRouterModels()
       if (!mounted) return
       if (res.ok) {
-        setModels(res.models)
-        const first = res.models?.[0]
-        if (first?.id) setSelectedModel(first.id)
+        const list = Array.isArray(res.models)
+          ? (res.models as Array<{ id?: string; name?: string }> )
+          : []
+        setModels(list)
+        const first = list?.[0]
+        if (first && typeof first.id === 'string') setSelectedModel(first.id)
       }
     })()
     return () => {

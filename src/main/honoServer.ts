@@ -1,13 +1,12 @@
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
-import type { Server } from 'http'
 import { LlmSettings } from '../shared/types'
 import Store from 'electron-store'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText } from 'ai'
 
 export class HonoServer {
-  private server: Server | null = null
+  private server: unknown | null = null
   private readonly port: number
   private readonly store: Store
 
@@ -25,8 +24,11 @@ export class HonoServer {
       c.header('Access-Control-Allow-Origin', '*')
       c.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
       c.header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-      if (c.req.method === 'OPTIONS') return c.text('', 204)
-      await next()
+      if (c.req.method === 'OPTIONS') {
+        c.status(204)
+        return c.body(null)
+      }
+      return next()
     })
 
     app.get('/health', c => c.json({ ok: true }))
@@ -81,7 +83,7 @@ export class HonoServer {
               const t = await resp.text()
               return c.json(
                 { ok: false, error: `HTTP_${resp.status}`, detail: t },
-                resp.status
+                { status: resp.status as any }
               )
             }
             const json = (await resp.json()) as any

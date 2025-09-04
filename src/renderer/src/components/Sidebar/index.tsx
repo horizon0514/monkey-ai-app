@@ -28,7 +28,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   sites,
   onOpenSettings
 }) => {
-  const items = [{ id: 'chat', title: 'Chat', icon: MessageCircle } as const].concat(
+  const items: Array<{ id: string; title: string; icon: LucideIcon }> = [
+    { id: 'chat', title: 'Chat', icon: MessageCircle }
+  ].concat(
     sites.map(s => ({ id: s.id, title: s.title, icon: SITE_ICONS[s.id] || Bot }))
   )
 
