@@ -59,10 +59,10 @@ export class WindowManager {
       this.sideViewManager.updateViewBounds()
     })
 
-    // 预热：窗口就绪后后台创建并加载启用站点的视图（不显示）
-    mainWindow.webContents.once('did-finish-load', () => {
-      this.prewarmEnabledSiteViews()
-    })
+    // 可选：如需减少启动期磁盘访问，暂时不预热站点视图
+    // mainWindow.webContents.once('did-finish-load', () => {
+    //   this.prewarmEnabledSiteViews()
+    // })
   }
 
   // 创建或显示设置窗口
@@ -267,8 +267,8 @@ export class WindowManager {
     this.store.set('siteConfigs', configs)
     this.sideViewManager.setSiteConfigs(configs)
 
-    // 配置变更后也预热启用站点
-    this.prewarmEnabledSiteViews()
+    // 配置变更后按需延迟预热，避免频繁触发 IndexedDB
+    // this.prewarmEnabledSiteViews()
   }
 
   getSiteConfigs(): SiteConfig[] {
@@ -323,20 +323,18 @@ export class WindowManager {
     return this.mainWindow
   }
 
-  // 预热启用站点：创建并触发首次 load（不展示），减少首次切换延迟
-  private prewarmEnabledSiteViews() {
-    const configs = this.getSiteConfigs().filter(site => site.enabled)
-    for (const site of configs) {
-      const existing = this.getAllSideViews().find(v => v.id === site.id)
-      if (!existing) {
-        // 创建后 SideViewManager 会在 configureBrowserEnvironment 内触发 loadUrl
-        this.createSideView(site.id, site.title, {
-          webPreferences: {
-            // 保持隔离，允许缓存
-            contextIsolation: true
-          }
-        })
-      }
-    }
-  }
+  // 预热启用站点（按需启用）：如需减少启动期磁盘访问，可以保持禁用
+  // private prewarmEnabledSiteViews() {
+  //   const configs = this.getSiteConfigs().filter(site => site.enabled)
+  //   for (const site of configs) {
+  //     const existing = this.getAllSideViews().find(v => v.id === site.id)
+  //     if (!existing) {
+  //       this.createSideView(site.id, site.title, {
+  //         webPreferences: {
+  //           contextIsolation: true
+  //         }
+  //       })
+  //     }
+  //   }
+  // }
 }

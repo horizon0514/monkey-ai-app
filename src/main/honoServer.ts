@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
 import { serve } from '@hono/node-server'
 import { LlmSettings } from '../shared/types'
 import Store from 'electron-store'
@@ -19,17 +20,12 @@ export class HonoServer {
     if (this.server) return
     const app = new Hono()
 
-    // Basic CORS
-    app.use('*', async (c, next) => {
-      c.header('Access-Control-Allow-Origin', '*')
-      c.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-      c.header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-      if (c.req.method === 'OPTIONS') {
-        c.status(204)
-        return c.body(null)
-      }
-      return next()
-    })
+    // CORS via official Hono middleware
+    app.use('*', cors({
+      origin: '*',
+      allowMethods: ['GET', 'POST', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization']
+    }))
 
     app.get('/health', c => c.json({ ok: true }))
 
@@ -61,9 +57,10 @@ export class HonoServer {
           const result = await generateText({
             model: openrouter(modelId || 'openai/gpt-4o-mini'),
             messages
-          } as any)
+          })
           return c.json({ ok: true, text: result.text })
         } catch (err: any) {
+          console.error(err)
           // Fallback: direct fetch if provider schema validation fails for some upstreams
           try {
             const resp = await fetch(`${baseURL.replace(/\/$/, '')}/chat/completions`, {
@@ -136,7 +133,7 @@ export class HonoServer {
           const result = await streamText({
             model: openrouter(modelId || 'openai/gpt-4o-mini'),
             messages
-          } as any)
+          })
 
           // Return a plain text stream of tokens
           return new Response(result.textStream as any, {
@@ -150,7 +147,7 @@ export class HonoServer {
           const result = await generateText({
             model: openrouter(modelId || 'openai/gpt-4o-mini'),
             messages
-          } as any)
+          })
           return new Response(result.text, {
             headers: {
               'Content-Type': 'text/plain; charset=utf-8',
@@ -165,8 +162,9 @@ export class HonoServer {
         )
       }
     })
-
     this.server = serve({ fetch: app.fetch, port: this.port })
+    // 增加调试日志
+    console.log(' HonoServer started on port ', this.port)
   }
 
   public getBaseURL(): string {

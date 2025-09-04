@@ -58,7 +58,7 @@ export const ChatView: React.FC = () => {
       abortRef.current = controller
       const res = await fetch(`${apiBase}/chat/stream`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Accept: 'text/plain' },
         body: JSON.stringify({ model: selectedModel, messages: conversation }),
         signal: controller.signal
       })
@@ -72,9 +72,11 @@ export const ChatView: React.FC = () => {
       let acc = ''
       const replyId = crypto.randomUUID()
       setMessages(prev => [...prev, { id: replyId, role: 'assistant', content: '' }])
-      while (true) {
+      let finished = false
+      while (!finished) {
         const { value, done } = await reader.read()
-        if (done) break
+        finished = Boolean(done)
+        if (finished) break
         const chunk = decoder.decode(value)
         acc += chunk
         setMessages(prev =>
@@ -82,7 +84,26 @@ export const ChatView: React.FC = () => {
         )
       }
     } catch (e: any) {
-      setError(String(e?.message || e))
+      // Fallback to non-streaming endpoint
+      try {
+        const conversation = messages
+          .concat([{ id: 'temp', role: 'user', content: text }])
+          .map(m => ({ role: m.role, content: m.content }))
+        const resp = await fetch(`${apiBase}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ model: selectedModel, messages: conversation })
+        })
+        const json = await resp.json().catch(() => null as any)
+        if (resp.ok && json && json.ok && typeof json.text === 'string') {
+          const replyId = crypto.randomUUID()
+          setMessages(prev => [...prev, { id: replyId, role: 'assistant', content: json.text as string }])
+        } else {
+          throw new Error(String(json?.error || `HTTP_${resp.status}`))
+        }
+      } catch (e2: any) {
+        setError(String(e2?.message || e2 || 'Failed to fetch'))
+      }
     } finally {
       setIsSending(false)
       abortRef.current = null
@@ -119,7 +140,7 @@ export const ChatView: React.FC = () => {
       <div className='flex-1 space-y-3 overflow-auto p-3'>
         {messages.map(msg => (
           <div key={msg.id} className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
-            <div className={cn('max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm shadow-sm', msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted')}> 
+            <div className={cn('max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm shadow-sm', msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
               {msg.content}
             </div>
           </div>
