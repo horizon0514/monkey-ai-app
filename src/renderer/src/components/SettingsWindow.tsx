@@ -17,6 +17,7 @@ import {
 import { Theme } from '@renderer/types/theme'
 import { SiteConfig, LlmSettings } from '../../../shared/types'
 import { defaultSites } from '../../../shared/defaultSites'
+import { Button } from './ui/button'
 
 type SettingsProps = {
   inline?: boolean
@@ -680,9 +681,9 @@ export const SettingsModal: React.FC<SettingsProps> = ({
           </div>
 
           {/* 底部操作条 */}
-          <div className='sticky bottom-0 -mx-6 mt-10 border-t border-border/40 bg-gradient-to-t from-background to-background/70 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
+          <div className='sticky -bottom-6 border-t border-border/40 bg-gradient-to-t from-background to-background/70 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
             <div className='flex items-center justify-end gap-2'>
-              <button
+              <Button
                 onClick={async () => {
                   // 导出 JSON
                   const blob = new Blob([JSON.stringify(sites, null, 2)], {
@@ -695,13 +696,11 @@ export const SettingsModal: React.FC<SettingsProps> = ({
                   a.click()
                   URL.revokeObjectURL(url)
                 }}
-                className={cn(
-                  'inline-flex items-center justify-center whitespace-nowrap rounded-md border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
-                )}
+                size='sm'
               >
                 导出
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={async () => {
                   // 导入 JSON
                   const input = document.createElement('input')
@@ -730,30 +729,25 @@ export const SettingsModal: React.FC<SettingsProps> = ({
                   }
                   input.click()
                 }}
-                className={cn(
-                  'inline-flex items-center justify-center whitespace-nowrap rounded-md border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
-                )}
+                size='sm'
               >
                 导入
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleResetDefaults}
-                className={cn(
-                  'inline-flex items-center justify-center whitespace-nowrap rounded-md border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
-                )}
+                size='sm'
               >
                 恢复默认
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() =>
                   onClose ? onClose() : window.electron.closeSettings()
                 }
-                className={cn(
-                  'inline-flex items-center justify-center whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
-                )}
+                size='sm'
+                variant='outline'
               >
                 关闭
-              </button>
+              </Button>
             </div>
           </div>
         </section>

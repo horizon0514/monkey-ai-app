@@ -4,7 +4,7 @@ import { serve } from '@hono/node-server'
 import { LlmSettings } from '../shared/types'
 import Store from 'electron-store'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
-import { generateText, streamText } from 'ai'
+import { generateText, streamText, convertToCoreMessages } from 'ai'
 
 export class HonoServer {
   private server: unknown | null = null
@@ -32,7 +32,8 @@ export class HonoServer {
     app.post('/chat', async c => {
       try {
         const body = await c.req.json()
-        const messages = Array.isArray(body?.messages) ? body.messages : []
+        const uiMessages = Array.isArray(body?.messages) ? body.messages : []
+        const coreMessages = convertToCoreMessages(uiMessages as any)
         const modelId = typeof body?.model === 'string' ? body.model : undefined
 
         const llm = (this.store.get('llm') as LlmSettings) || {
@@ -56,13 +57,22 @@ export class HonoServer {
         try {
           const result = await generateText({
             model: openrouter(modelId || 'openai/gpt-4o-mini'),
-            messages
+            messages: coreMessages
           })
           return c.json({ ok: true, text: result.text })
         } catch (err: any) {
           console.error(err)
           // Fallback: direct fetch if provider schema validation fails for some upstreams
           try {
+            // convert to OpenAI compatible messages
+            const openAiMessages = (coreMessages as any[]).map((m: any) => ({
+              role: m.role,
+              content: Array.isArray(m.content)
+                ? m.content
+                    .map((p: any) => (p?.type === 'text' ? p.text : ''))
+                    .join('')
+                : ''
+            }))
             const resp = await fetch(`${baseURL.replace(/\/$/, '')}/chat/completions`, {
               method: 'POST',
               headers: {
@@ -73,7 +83,7 @@ export class HonoServer {
               },
               body: JSON.stringify({
                 model: modelId || 'openai/gpt-4o-mini',
-                messages
+                messages: openAiMessages
               })
             })
             if (!resp.ok) {
@@ -108,8 +118,16 @@ export class HonoServer {
     app.post('/chat/stream', async c => {
       try {
         const body = await c.req.json()
-        const messages = Array.isArray(body?.messages) ? body.messages : []
+        console.log('Received body:', JSON.stringify(body, null, 2))
+
+        const uiMessages = Array.isArray(body?.messages) ? body.messages : []
+        console.log('UI Messages:', JSON.stringify(uiMessages, null, 2))
+
+        const coreMessages = convertToCoreMessages(uiMessages as any)
+        console.log('Core Messages:', JSON.stringify(coreMessages, null, 2))
+
         const modelId = typeof body?.model === 'string' ? body.model : undefined
+        console.log('Model ID:', modelId)
 
         const llm = (this.store.get('llm') as LlmSettings) || {
           provider: 'openrouter'
@@ -120,28 +138,41 @@ export class HonoServer {
           return c.json({ ok: false, error: 'MISSING_API_KEY' }, 400)
         }
 
+
         const openrouter = createOpenRouter({
           apiKey,
           baseURL,
           headers: {
             'HTTP-Referer': 'chat-monkey',
-            'X-Title': 'chat-monkey'
+            'X-Title': 'chat-monkey',
           }
         })
 
         try {
+          console.log('About to call streamText with model:', modelId || 'openai/gpt-4o-mini')
+
           const result = await streamText({
             model: openrouter(modelId || 'openai/gpt-4o-mini'),
-            messages
+            messages: coreMessages,
+            system: 'You are a helpful assistant that can answer questions and help with tasks',
           })
 
+          console.log('streamText result:', result)
+          console.log('streamText call => model:', modelId, 'messages:', coreMessages)
+
           // Return AI SDK UI message stream response for @ai-sdk/react useChat
-          return result.toUIMessageStreamResponse()
+          const response = result.toUIMessageStreamResponse({
+            sendSources: true,
+            sendReasoning: true,
+          })
+          return response
         } catch (err: any) {
+          console.error('Error in streamText:', err)
+          console.error('Error stack:', err.stack)
           // Fallback: non-stream with generateText
           const result = await generateText({
             model: openrouter(modelId || 'openai/gpt-4o-mini'),
-            messages
+            messages: coreMessages
           })
           return new Response(result.text, {
             headers: {

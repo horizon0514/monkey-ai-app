@@ -1,147 +1,203 @@
-import React, { useEffect, useState } from 'react'
-import { cn } from '@renderer/lib/utils'
-import { useChat } from '@ai-sdk/react'
+'use client';
+import { Fragment } from 'react';
+import { Action } from '@renderer/components/ui/ai-elements/actions';
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+} from '@renderer/components/ui/ai-elements/conversation';
+import { Message, MessageContent } from '@renderer/components/ui/ai-elements/message';
+import {
+  PromptInput,
+  PromptInputButton,
+  PromptInputModelSelect,
+  PromptInputModelSelectContent,
+  PromptInputModelSelectItem,
+  PromptInputModelSelectTrigger,
+  PromptInputModelSelectValue,
+  PromptInputSubmit,
+  PromptInputTextarea,
+  PromptInputToolbar,
+  PromptInputTools,
+} from '@renderer/components/ui/ai-elements/prompt-input';
+import {
+  Actions
+} from '@renderer/components/ui/ai-elements/actions';
+import { useState } from 'react';
+import { useChat } from '@ai-sdk/react';
+import { Response } from '@renderer/components/ui/ai-elements/response';
+import { GlobeIcon, RefreshCcwIcon, CopyIcon } from 'lucide-react';
+import {
+  Source,
+  Sources,
+  SourcesContent,
+  SourcesTrigger,
+} from '@renderer/components/ui/ai-elements/sources';
+import {
+  Reasoning,
+  ReasoningContent,
+  ReasoningTrigger,
+} from '@renderer/components/ui/ai-elements/reasoning';
+import { Loader } from '@renderer/components/ui/ai-elements/loader';
+import { DefaultChatTransport } from 'ai';
 
-export const ChatView: React.FC = () => {
-  const [models, setModels] = useState<Array<{ id?: string; name?: string }>>([])
-  const [selectedModel, setSelectedModel] = useState<string>('')
-  const [error, setError] = useState<string | null>(null)
-  const [apiBase, setApiBase] = useState<string>('http://127.0.0.1:3399')
-  const api = `${apiBase}/chat/stream`
+const models = [
+  {
+    name: 'GPT 4o',
+    value: 'openai/gpt-4o',
+  },
+  {
+    name: 'Deepseek R1',
+    value: 'deepseek/deepseek-r1',
+  },
+];
 
-  const chat = useChat({
-    transport: {
-      sendMessages: async ({ messages, abortSignal }) => {
-        const res = await fetch(api, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: selectedModel, messages }),
-          signal: abortSignal
-        })
-        if (!res.ok || !res.body) {
-          throw new Error(`HTTP_${res.status}`)
-        }
-        return res.body as unknown as ReadableStream<any>
-      },
-      reconnectToStream: async () => null
+export const ChatView = () => {
+  const [input, setInput] = useState('');
+  const [model, setModel] = useState<string>(models[0].value);
+  const [webSearch, setWebSearch] = useState(false);
+  const { messages, sendMessage, status, regenerate } = useChat({
+    transport: new DefaultChatTransport({
+      api: 'http://127.0.0.1:3399/chat/stream',
+    }),
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input.trim()) {
+      sendMessage(
+        { text: input },
+        {
+          body: {
+            model: model,
+            webSearch: webSearch,
+          },
+        },
+      );
+      setInput('');
     }
-  })
-
-  useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      const base = await window.electron.getLocalApiBase()
-      setApiBase(base)
-
-      const res = await window.electron.fetchOpenRouterModels()
-      if (!mounted) return
-      if (res.ok) {
-        const list = Array.isArray(res.models)
-          ? (res.models as Array<{ id?: string; name?: string }> )
-          : []
-        setModels(list)
-        const first = list?.[0]
-        if (first && typeof first.id === 'string') setSelectedModel(first.id)
-      }
-    })()
-    return () => {
-      mounted = false
-    }
-  }, [])
-
-  const [prompt, setPrompt] = useState('')
-  const handleSend = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (!selectedModel) return
-    const text = prompt.trim()
-    if (!text) return
-    setError(null)
-    chat.sendMessage({ text })
-    setPrompt('')
-  }
+  };
 
   return (
-    <div className='flex h-full flex-col'>
-      <div className='flex items-center justify-between border-b border-border/40 p-2'>
-        <div className='flex items-center gap-2'>
-          <select
-            value={selectedModel}
-            onChange={e => setSelectedModel(e.target.value)}
-            className='h-8 rounded-md border border-input bg-background px-2 text-sm'
-          >
-            {models.map((m: any) => (
-              <option key={m.id} value={m.id}>
-                {m.name || m.id}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className='flex items-center gap-2'>
-          <button
-            onClick={() => window.location.reload()}
-            className='inline-flex h-8 items-center justify-center whitespace-nowrap rounded-md border border-input bg-background px-3 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground'
-          >
-            清空
-          </button>
-          {error && <div className='text-xs text-destructive'>错误：{error}</div>}
-        </div>
-      </div>
-
-      <div className='flex-1 space-y-3 overflow-auto p-3'>
-        {chat.messages.map(msg => (
-          <div key={msg.id} className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
-            <div className={cn('max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm shadow-sm', msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
-              {msg.parts?.map((p: any, idx: number) => (p?.type === 'text' ? <span key={idx}>{p.text}</span> : null))}
-            </div>
-          </div>
-        ))}
-        {chat.messages.length === 0 && (
-          <div className='p-6 text-center text-sm text-muted-foreground'>开始与 AI 对话吧</div>
-        )}
-      </div>
-
-      <div className='border-t border-border/40 p-2'>
-        <div className='flex items-center gap-2'>
-          <form onSubmit={handleSend} className='flex flex-1 items-center gap-2'>
-            <textarea
-              value={prompt}
-              onChange={e => setPrompt(e.target.value)}
-              onKeyDown={e => {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                  e.preventDefault()
-                  if (!selectedModel) return
-                  setError(null)
-                  const text = prompt.trim()
-                  if (text) {
-                    chat.sendMessage({ text })
-                    setPrompt('')
+    <div className="max-w-4xl mx-auto p-6 relative size-full h-[calc(100vh-48px)]">
+      <div className="flex flex-col h-full">
+        <Conversation className="h-full">
+          <ConversationContent>
+            {messages.map((message) => (
+              <div key={message.id}>
+                {message.role === 'assistant' && message.parts.filter((part) => part.type === 'source-url').length > 0 && (
+                  <Sources>
+                    <SourcesTrigger
+                      count={
+                        message.parts.filter(
+                          (part) => part.type === 'source-url',
+                        ).length
+                      }
+                    />
+                    {message.parts.filter((part) => part.type === 'source-url').map((part, i) => (
+                      <SourcesContent key={`${message.id}-${i}`}>
+                        <Source
+                          key={`${message.id}-${i}`}
+                          href={part.url}
+                          title={part.url}
+                        />
+                      </SourcesContent>
+                    ))}
+                  </Sources>
+                )}
+                {message.parts.map((part, i) => {
+                  switch (part.type) {
+                    case 'text':
+                      return (
+                        <Fragment key={`${message.id}-${i}`}>
+                          <Message from={message.role}>
+                            <MessageContent>
+                              <Response>
+                                {part.text}
+                              </Response>
+                            </MessageContent>
+                          </Message>
+                          {message.role === 'assistant' && i === messages.length - 1 && (
+                            <Actions className="mt-2">
+                              <Action
+                                onClick={() => regenerate()}
+                                label="Retry"
+                              >
+                                <RefreshCcwIcon className="size-3" />
+                              </Action>
+                              <Action
+                                onClick={() =>
+                                  navigator.clipboard.writeText(part.text)
+                                }
+                                label="Copy"
+                              >
+                                <CopyIcon className="size-3" />
+                              </Action>
+                            </Actions>
+                          )}
+                        </Fragment>
+                      );
+                    case 'reasoning':
+                      return (
+                        <Reasoning
+                          key={`${message.id}-${i}`}
+                          className="w-full"
+                          isStreaming={status === 'streaming' && i === message.parts.length - 1 && message.id === messages.at(-1)?.id}
+                        >
+                          <ReasoningTrigger />
+                          <ReasoningContent>{part.text}</ReasoningContent>
+                        </Reasoning>
+                      );
+                    default:
+                      return null;
                   }
-                }
-              }}
-              placeholder='输入消息，按 Ctrl/⌘ + Enter 发送'
-              rows={2}
-              className='max-h-40 min-h-10 flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring'
-            />
-            <button
-              type='submit'
-              disabled={chat.status === 'submitted' || chat.status === 'streaming' || !prompt.trim()}
-              className='inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50'
-            >
-              发送
-            </button>
-            {chat.status === 'submitted' || chat.status === 'streaming' ? (
-              <button
-                type='button'
-                onClick={() => chat.stop()}
-                className='inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent'
+                })}
+              </div>
+            ))}
+            {status === 'submitted' && <Loader />}
+          </ConversationContent>
+          <ConversationScrollButton />
+        </Conversation>
+
+        <PromptInput onSubmit={handleSubmit} className="mt-4">
+          <PromptInputTextarea
+            onChange={(e) => setInput(e.target.value)}
+            value={input}
+            className='bg-background'
+            placeholder="在这里输入你的问题，按回车键发送"
+          />
+          <PromptInputToolbar>
+            <PromptInputTools>
+              <PromptInputButton
+                variant={webSearch ? 'default' : 'ghost'}
+                onClick={() => setWebSearch(!webSearch)}
               >
-                停止
-              </button>
-            ) : null}
-          </form>
-        </div>
+                <GlobeIcon size={16} />
+                <span>Search</span>
+              </PromptInputButton>
+              <PromptInputModelSelect
+                onValueChange={(value) => {
+                  setModel(value);
+                }}
+                value={model}
+              >
+                <PromptInputModelSelectTrigger>
+                  <PromptInputModelSelectValue />
+                </PromptInputModelSelectTrigger>
+                <PromptInputModelSelectContent>
+                  {models.map((model) => (
+                    <PromptInputModelSelectItem key={model.value} value={model.value}>
+                      {model.name}
+                    </PromptInputModelSelectItem>
+                  ))}
+                </PromptInputModelSelectContent>
+              </PromptInputModelSelect>
+            </PromptInputTools>
+            <PromptInputSubmit disabled={!input} status={status} />
+          </PromptInputToolbar>
+        </PromptInput>
       </div>
     </div>
-  )
-}
+  );
+};
 
