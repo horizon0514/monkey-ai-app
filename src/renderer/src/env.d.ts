@@ -47,3 +47,20 @@ declare global {
     }
   }
 }
+
+// Minimal module declaration for ai/react to satisfy TS in this setup
+declare module 'ai/react' {
+  export type UseChatOptions = {
+    api: string
+    streamMode?: 'text'
+    body?: Record<string, unknown>
+  }
+  export function useChat(opts: UseChatOptions): {
+    messages: Array<{ id: string; role: 'user' | 'assistant'; content: unknown }>
+    input: string
+    handleInputChange: (e: any) => void
+    handleSubmit: (e: any) => void
+    isLoading: boolean
+    stop: () => void
+  }
+}
