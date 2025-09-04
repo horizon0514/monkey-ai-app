@@ -68,7 +68,6 @@ jobs:
           name: dist-linux
           path: |
             dist/*.AppImage
-            dist/*.snap
             dist/*.deb
             dist/*.rpm
 
@@ -109,7 +108,6 @@ jobs:
             dist/*.exe
             dist/*.dmg
             dist/*.AppImage
-            dist/*.snap
             dist/*.deb
             dist/*.rpm
         env:
