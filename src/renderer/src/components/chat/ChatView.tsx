@@ -16,9 +16,9 @@ export const ChatView: React.FC = () => {
   const [models, setModels] = useState<any[]>([])
   const [selectedModel, setSelectedModel] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
-  const [openai, setOpenai] = useState<ReturnType<typeof createOpenAI> | null>(
-    null
-  )
+  const [openrouter, setOpenrouter] = useState<
+    ReturnType<typeof createOpenAI> | null
+  >(null)
 
   useEffect(() => {
     let mounted = true
@@ -27,10 +27,16 @@ export const ChatView: React.FC = () => {
       const llm = await window.electron.getLlmSettings()
       const apiKey = llm?.openrouter?.apiKey || ''
       const baseURL = llm?.openrouter?.baseUrl || 'https://openrouter.ai/api/v1'
-      setOpenai(
+      // Use OpenAI provider configured for OpenRouter endpoint
+      setOpenrouter(
         createOpenAI({
           apiKey,
-          baseURL
+          baseURL,
+          headers: {
+            // Optional headers recommended by OpenRouter
+            'HTTP-Referer': 'chat-monkey',
+            'X-Title': 'chat-monkey'
+          }
         })
       )
 
@@ -57,7 +63,7 @@ export const ChatView: React.FC = () => {
     setInput('')
 
     try {
-      if (!openai) {
+      if (!openrouter) {
         throw new Error('LLM 尚未初始化')
       }
       const conversation = messages
@@ -65,7 +71,7 @@ export const ChatView: React.FC = () => {
         .map(m => ({ role: m.role, content: m.content }))
 
       const result = await generateText({
-        model: openai(selectedModel),
+        model: openrouter(selectedModel),
         messages: conversation as any
       })
       const reply: Message = {
@@ -83,28 +89,37 @@ export const ChatView: React.FC = () => {
 
   return (
     <div className='flex h-full flex-col'>
-      <div className='flex items-center gap-2 border-b border-border/40 p-2'>
-        <select
-          value={selectedModel}
-          onChange={e => setSelectedModel(e.target.value)}
-          className='h-8 rounded-md border border-input bg-background px-2 text-sm'
-        >
-          {models.map((m: any) => (
-            <option key={m.id} value={m.id}>
-              {m.name || m.id}
-            </option>
-          ))}
-        </select>
-        {error && <div className='text-xs text-destructive'>错误：{error}</div>}
+      <div className='flex items-center justify-between border-b border-border/40 p-2'>
+        <div className='flex items-center gap-2'>
+          <select
+            value={selectedModel}
+            onChange={e => setSelectedModel(e.target.value)}
+            className='h-8 rounded-md border border-input bg-background px-2 text-sm'
+          >
+            {models.map((m: any) => (
+              <option key={m.id} value={m.id}>
+                {m.name || m.id}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className='flex items-center gap-2'>
+          <button
+            onClick={() => setMessages([])}
+            className='inline-flex h-8 items-center justify-center whitespace-nowrap rounded-md border border-input bg-background px-3 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground'
+          >
+            清空
+          </button>
+          {error && <div className='text-xs text-destructive'>错误：{error}</div>}
+        </div>
       </div>
 
       <div className='flex-1 space-y-3 overflow-auto p-3'>
         {messages.map(msg => (
-          <div key={msg.id} className={cn('max-w-3xl whitespace-pre-wrap rounded-md p-2 text-sm', msg.role === 'user' ? 'bg-primary/10' : 'bg-muted/50')}>
-            <div className='mb-1 text-[11px] uppercase tracking-wider text-muted-foreground'>
-              {msg.role}
+          <div key={msg.id} className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
+            <div className={cn('max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm shadow-sm', msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted')}> 
+              {msg.content}
             </div>
-            {msg.content}
           </div>
         ))}
         {messages.length === 0 && (
