@@ -135,13 +135,8 @@ export class HonoServer {
             messages
           })
 
-          // Return a plain text stream of tokens
-          return new Response(result.textStream as any, {
-            headers: {
-              'Content-Type': 'text/plain; charset=utf-8',
-              'Cache-Control': 'no-cache'
-            }
-          })
+          // Return AI SDK UI compatible stream response
+          return result.toTextStreamResponse()
         } catch (err: any) {
           // Fallback: non-stream with generateText
           const result = await generateText({
