@@ -43,7 +43,6 @@ export const CodeBlock = ({
       {...props}
     >
       <div className="relative">
-        {/* @ts-expect-error - SyntaxHighlighter is not a valid JSX component */}
         <SyntaxHighlighter
           className="overflow-hidden dark:hidden"
           codeTagProps={{
@@ -67,7 +66,6 @@ export const CodeBlock = ({
         >
           {code}
         </SyntaxHighlighter>
-        {/* @ts-expect-error - SyntaxHighlighter is not a valid JSX component */}
         <SyntaxHighlighter
           className="hidden overflow-hidden dark:block"
           codeTagProps={{
@@ -125,14 +123,14 @@ export const CodeBlockCopyButton = ({
     }
 
     try {
-      await navigator.clipboard.writeText(code);
+      await navigator.clipboard.writeText(code)
       setIsCopied(true);
       onCopy?.();
       setTimeout(() => setIsCopied(false), timeout);
     } catch (error) {
       onError?.(error as Error);
     }
-  };
+  }
 
   const Icon = isCopied ? CheckIcon : CopyIcon;
 
@@ -146,5 +144,5 @@ export const CodeBlockCopyButton = ({
     >
       {children ?? <Icon size={14} />}
     </Button>
-  );
+  )
 };
