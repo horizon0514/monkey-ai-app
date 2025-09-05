@@ -24,7 +24,7 @@ import {
   PromptInputTools
 } from '@renderer/components/ui/ai-elements/prompt-input'
 import { Actions } from '@renderer/components/ui/ai-elements/actions'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { Response } from '@renderer/components/ui/ai-elements/response'
 import { GlobeIcon, RefreshCcwIcon, CopyIcon } from 'lucide-react'
@@ -41,6 +41,7 @@ import {
 } from '@renderer/components/ui/ai-elements/reasoning'
 import { Loader } from '@renderer/components/ui/ai-elements/loader'
 import { DefaultChatTransport } from 'ai'
+// use Web Crypto
 
 const models = [
   {
@@ -57,11 +58,16 @@ export const ChatView = () => {
   const [input, setInput] = useState('')
   const [model, setModel] = useState<string>(models[0].value)
   const [webSearch, setWebSearch] = useState(false)
+  const conversationId = useMemo(() => crypto.randomUUID(), [])
   const { messages, sendMessage, status, regenerate } = useChat({
     transport: new DefaultChatTransport({
       api: 'http://127.0.0.1:3399/chat/stream'
     })
   })
+
+  useEffect(() => {
+    // no-op, placeholder if we later want to fetch history
+  }, [])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -71,7 +77,8 @@ export const ChatView = () => {
         {
           body: {
             model: model,
-            webSearch: webSearch
+            webSearch: webSearch,
+            conversationId
           }
         }
       )

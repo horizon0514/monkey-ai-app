@@ -24,6 +24,14 @@ declare global {
       getCurrentUrl: () => Promise<string | null>
       hideCurrentView: () => Promise<void>
       getLocalApiBase: () => Promise<string>
+      // Chat history
+      listConversations: () => Promise<{ ok: boolean; conversations?: unknown[]; error?: string }>
+      getMessages: (
+        conversationId: string
+      ) => Promise<{ ok: boolean; messages?: unknown[]; error?: string }>
+      deleteConversation: (
+        conversationId: string
+      ) => Promise<{ ok: boolean; error?: string }>
       getLlmSettings: () => Promise<LlmSettings>
       setLlmSettings: (settings: LlmSettings) => Promise<void>
       fetchOpenRouterModels: () => Promise<

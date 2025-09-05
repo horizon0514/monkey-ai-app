@@ -207,7 +207,11 @@ function setupIpcHandlers() {
     'fetch-openrouter-models',
     'set-theme',
     'get-theme',
-    'get-effective-theme'
+    'get-effective-theme',
+    // chat history
+    'db-list-conversations',
+    'db-get-messages',
+    'db-delete-conversation'
   ] as const
   const onChannels = [
     'sidebar-resize',
@@ -318,6 +322,23 @@ function setupIpcHandlers() {
   // 返回本地 API 基地址
   ipcMain.handle('get-local-api-base', () => {
     return honoServer?.getBaseURL() || 'http://127.0.0.1:3399'
+  })
+  // Chat history IPC
+  ipcMain.handle('db-list-conversations', async () => {
+    const base = honoServer?.getBaseURL() || 'http://127.0.0.1:3399'
+    const res = await fetch(`${base}/conversations`)
+    const json = await res.json()
+    return json
+  })
+  ipcMain.handle('db-get-messages', async (_evt, conversationId: string) => {
+    const base = honoServer?.getBaseURL() || 'http://127.0.0.1:3399'
+    const res = await fetch(`${base}/conversations/${conversationId}/messages`)
+    const json = await res.json()
+    return json
+  })
+  ipcMain.handle('db-delete-conversation', async (_evt, _conversationId: string) => {
+    // simple delete via direct store not implemented; placeholder for future
+    return { ok: false, error: 'NOT_IMPLEMENTED' }
   })
 
   // 隐藏当前内嵌视图（用于展示内置 Chat/设置 等界面）

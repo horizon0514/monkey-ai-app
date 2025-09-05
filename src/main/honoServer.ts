@@ -5,6 +5,9 @@ import { LlmSettings } from '../shared/types'
 import Store from 'electron-store'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText, streamText, convertToCoreMessages } from 'ai'
+import { db, schema } from './db'
+import { eq } from 'drizzle-orm'
+import crypto from 'node:crypto'
 
 export class HonoServer {
   private server: unknown | null = null
@@ -31,6 +34,22 @@ export class HonoServer {
     )
 
     app.get('/health', c => c.json({ ok: true }))
+
+    // List conversations
+    app.get('/conversations', async c => {
+      const rows = await db.select().from(schema.conversations)
+      return c.json({ ok: true, conversations: rows })
+    })
+
+    // Get messages of conversation
+    app.get('/conversations/:id/messages', async c => {
+      const id = c.req.param('id')
+      const rows = await db
+        .select()
+        .from(schema.messages)
+        .where(eq(schema.messages.conversationId, id))
+      return c.json({ ok: true, messages: rows })
+    })
 
     app.post('/chat', async c => {
       try {
@@ -137,6 +156,8 @@ export class HonoServer {
         console.log('Core Messages:', JSON.stringify(coreMessages, null, 2))
 
         const modelId = typeof body?.model === 'string' ? body.model : undefined
+        const webSearch = Boolean(body?.webSearch)
+        const conversationId = (body?.conversationId as string) || crypto.randomUUID()
         console.log('Model ID:', modelId)
 
         const llm = (this.store.get('llm') as LlmSettings) || {
@@ -164,6 +185,47 @@ export class HonoServer {
             modelId || 'openai/gpt-4o-mini'
           )
 
+          // ensure conversation exists and insert latest user message for persistence
+          try {
+            // upsert conversation
+            const existing = await db
+              .select()
+              .from(schema.conversations)
+              .where(eq(schema.conversations.id, conversationId))
+              .limit(1)
+            if (existing.length === 0) {
+              await db.insert(schema.conversations).values({
+                id: conversationId,
+                title: (uiMessages?.[0]?.content?.[0]?.text as string) || 'New Chat',
+                model: modelId,
+                webSearch,
+                createdAt: new Date(),
+                updatedAt: new Date()
+              })
+            } else {
+              await db
+                .update(schema.conversations)
+                .set({ updatedAt: new Date(), model: modelId, webSearch })
+                .where(eq(schema.conversations.id, conversationId))
+            }
+            // persist last user message (if any)
+            const lastMsg = uiMessages?.at(-1)
+            if (lastMsg && lastMsg.role === 'user') {
+              await db.insert(schema.messages).values({
+                id: lastMsg.id || crypto.randomUUID(),
+                conversationId,
+                role: 'user',
+                content: (lastMsg.content || [])
+                  .map((p: any) => (p?.type === 'text' ? p.text : ''))
+                  .join(''),
+                raw: JSON.stringify(lastMsg),
+                createdAt: new Date()
+              })
+            }
+          } catch (persistErr) {
+            console.error('DB persist error (pre-stream):', persistErr)
+          }
+
           const result = await streamText({
             model: openrouter(modelId || 'openai/gpt-4o-mini'),
             messages: coreMessages,
@@ -184,6 +246,27 @@ export class HonoServer {
             sendSources: true,
             sendReasoning: true
           })
+          // Tap into completion for persistence after stream ends
+          ;(async () => {
+            try {
+              const full = await result.text
+              await db.insert(schema.messages).values({
+                id: crypto.randomUUID(),
+                conversationId,
+                role: 'assistant',
+                content: full,
+                raw: JSON.stringify({ text: full }),
+                createdAt: new Date()
+              })
+              await db
+                .update(schema.conversations)
+                .set({ updatedAt: new Date() })
+                .where(eq(schema.conversations.id, conversationId))
+            } catch (e) {
+              console.error('DB persist error (post-stream):', e)
+            }
+          })()
+
           return response
         } catch (err: any) {
           console.error('Error in streamText:', err)
@@ -193,7 +276,20 @@ export class HonoServer {
             model: openrouter(modelId || 'openai/gpt-4o-mini'),
             messages: coreMessages
           })
-          return new Response(result.text, {
+          const assistantText = result.text
+          try {
+            await db.insert(schema.messages).values({
+              id: crypto.randomUUID(),
+              conversationId,
+              role: 'assistant',
+              content: await assistantText,
+              raw: JSON.stringify({ text: assistantText }),
+              createdAt: new Date()
+            })
+          } catch (e) {
+            console.error('DB persist error (fallback):', e)
+          }
+          return new Response(await assistantText, {
             headers: {
               'Content-Type': 'text/plain; charset=utf-8',
               'X-Fallback': 'generateText'
