@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { Search, Command, X, ExternalLink } from 'lucide-react'
+import { Input } from '@renderer/components/ui/input'
+import { Button } from '@renderer/components/ui/button'
 
 interface QuickAction {
   id: string
@@ -89,23 +91,26 @@ const QuickWindow: React.FC = () => {
           <div className='pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3'>
             <Search className='h-5 w-5 text-gray-400' />
           </div>
-          <input
+          <Input
             id='quick-search-input'
             ref={inputRef}
             type='text'
-            className='w-full rounded-lg border-0 bg-white/10 p-3 pl-10 text-sm text-white placeholder-gray-400 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+            className='pl-10'
             placeholder='搜索命令...'
             value={searchValue}
             onChange={e => setSearchValue(e.target.value)}
             onKeyDown={handleKeyDown}
           />
           {searchValue && (
-            <button
-              className='absolute inset-y-0 right-0 flex items-center pr-3'
+            <Button
+              variant='ghost'
+              size='icon'
+              className='absolute inset-y-0 right-0 my-1.5 mr-1.5'
               onClick={() => setSearchValue('')}
+              title='清除'
             >
-              <X className='h-5 w-5 text-gray-400 hover:text-white' />
-            </button>
+              <X className='h-5 w-5 opacity-70' />
+            </Button>
           )}
         </div>
 

@@ -1896,19 +1896,9 @@ agent-base@^7.0.2:
   dependencies:
     debug "^4.3.4"
 
-ai@5.0.30:
+ai@5.0.30, ai@^5.0.30:
   version "5.0.30"
   resolved "https://registry.yarnpkg.com/ai/-/ai-5.0.30.tgz#deaa706e76a1da1e71434049609ffdd668e17fcf"
-  integrity sha512-u7WdsDde9BasP+h8Q64CtU32GFShCYmxVtBa2h5dxM1f0w/AMKwzpmIDI1t3M3ean+L6uBiwOtRs8B2KA+OHgQ==
-  dependencies:
-    "@ai-sdk/gateway" "1.0.15"
-    "@ai-sdk/provider" "2.0.0"
-    "@ai-sdk/provider-utils" "3.0.7"
-    "@opentelemetry/api" "1.9.0"
-
-ai@^5.0.30:
-  version "5.0.30"
-  resolved "https://registry.npmmirror.com/ai/-/ai-5.0.30.tgz#deaa706e76a1da1e71434049609ffdd668e17fcf"
   integrity sha512-u7WdsDde9BasP+h8Q64CtU32GFShCYmxVtBa2h5dxM1f0w/AMKwzpmIDI1t3M3ean+L6uBiwOtRs8B2KA+OHgQ==
   dependencies:
     "@ai-sdk/gateway" "1.0.15"

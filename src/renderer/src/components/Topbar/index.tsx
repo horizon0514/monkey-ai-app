@@ -47,22 +47,24 @@ export const Topbar: React.FC<TopbarProps> = ({ tab, title }) => {
       <div className='flex-1' />
       <div className='px-2 no-drag'>
         <div className='flex items-center gap-1'>
-          <button
-            className='inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-accent'
+          <Button
+            variant='ghost'
+            size='icon'
             disabled={!canGoBack}
             onClick={() => window.electron.goBack()}
             title='后退'
           >
             <ArrowLeft size={16} />
-          </button>
-          <button
-            className='inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-accent'
+          </Button>
+          <Button
+            variant='ghost'
+            size='icon'
             disabled={!canGoForward}
             onClick={() => window.electron.goForward()}
             title='前进'
           >
             <ArrowRight size={16} />
-          </button>
+          </Button>
         </div>
       </div>
       <div className='px-2 no-drag'>

@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import { Theme } from './types/theme'
+import { Theme, ColorTheme } from './types/theme'
 import { SiteConfig, LlmSettings } from '../../../shared/types'
 
 declare global {
@@ -13,6 +13,8 @@ declare global {
       setTheme: (theme: Theme) => Promise<void>
       getTheme: () => Promise<Theme>
       getEffectiveTheme: () => Promise<'light' | 'dark'>
+      setColorTheme: (palette: ColorTheme) => Promise<void>
+      getColorTheme: () => Promise<ColorTheme>
       hideQuickWindow: () => void
       openExternalUrl: (url: string) => Promise<void>
       getNavigationState: () => Promise<{

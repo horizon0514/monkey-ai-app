@@ -1,3 +1,6 @@
+@import './themes/default.css';
+@import './themes/ocean.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -69,5 +72,15 @@ body,
     --border: 215 14% 22%;
     --input: 215 14% 22%;
     --ring: 216 12% 84%;
+  }
+}
+
+@layer utilities {
+  /* Ensure palette overrides win over base */
+  html.theme-default {
+    all: initial;
+  }
+  html.theme-ocean {
+    all: initial;
   }
 }

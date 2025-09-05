@@ -14,6 +14,10 @@ const api = {
     ipcRenderer.invoke('set-theme', theme),
   getTheme: () => ipcRenderer.invoke('get-theme'),
   getEffectiveTheme: () => ipcRenderer.invoke('get-effective-theme'),
+  // Color theme (palette)
+  setColorTheme: (palette: string) =>
+    ipcRenderer.invoke('set-color-theme', palette),
+  getColorTheme: () => ipcRenderer.invoke('get-color-theme'),
   hideQuickWindow: () => ipcRenderer.send('hide-quick-window'),
   openExternalUrl: (url: string) =>
     ipcRenderer.invoke('open-external-url', url),

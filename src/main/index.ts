@@ -49,7 +49,10 @@ const store = new Store({
         apiKey: '',
         baseUrl: 'https://openrouter.ai/api/v1'
       }
-    } as LlmSettings
+    } as LlmSettings,
+    ui: {
+      colorTheme: 'default'
+    }
   }
 })
 
@@ -207,7 +210,9 @@ function setupIpcHandlers() {
     'fetch-openrouter-models',
     'set-theme',
     'get-theme',
-    'get-effective-theme'
+    'get-effective-theme',
+    'set-color-theme',
+    'get-color-theme'
   ] as const
   const onChannels = [
     'sidebar-resize',
@@ -336,6 +341,17 @@ function setupIpcHandlers() {
     BrowserWindow.getAllWindows().forEach(window => {
       window.webContents.send('llm-settings-changed')
     })
+  })
+
+  // UI color theme (palette)
+  ipcMain.handle('set-color-theme', (_evt, palette: string) => {
+    store.set('ui.colorTheme', palette)
+    BrowserWindow.getAllWindows().forEach(window => {
+      window.webContents.send('color-theme-changed', palette)
+    })
+  })
+  ipcMain.handle('get-color-theme', () => {
+    return (store.get('ui.colorTheme') as string) || 'default'
   })
 
   ipcMain.handle('fetch-openrouter-models', async () => {
