@@ -20,6 +20,13 @@ import { SiteConfig, LlmSettings } from '../../../shared/types'
 import { defaultSites } from '../../../shared/defaultSites'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from './ui/select'
 
 type SettingsProps = {
   inline?: boolean
@@ -363,24 +370,25 @@ export const SettingsModal: React.FC<SettingsProps> = ({
             {/* 颜色主题 */}
             <div className='mt-4'>
               <div className={cn('mb-2 font-medium leading-none', isMacOS ? 'text-sm' : 'text-base')}>配色</div>
-              <div className='grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4'>
-                {getAllPalettes().map(p => (
-                  <Button
-                    key={p.id}
-                    variant={colorTheme === p.id ? 'default' : 'outline'}
-                    onClick={() => handleColorThemeChange(p.id)}
-                    className='justify-between p-2'
-                    title={p.label}
-                  >
-                    <div className='flex items-center gap-2'>
-                      <span className='inline-block h-5 w-5 rounded-full bg-primary ring-2 ring-ring' />
-                      <span>{p.label}</span>
-                    </div>
-                    {colorTheme === p.id && (
-                      <span className='text-xs opacity-80'>已选</span>
-                    )}
-                  </Button>
-                ))}
+              <div className='w-[240px]'>
+                <Select
+                  value={colorTheme}
+                  onValueChange={v => handleColorThemeChange(v as ColorTheme)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder='选择配色' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAllPalettes().map(p => (
+                      <SelectItem
+                        key={p.id}
+                        value={p.id}
+                      >
+                        {p.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
