@@ -15,6 +15,7 @@ import {
   X
 } from 'lucide-react'
 import { Theme, ColorTheme } from '@renderer/types/theme'
+import { getAllPalettes } from '@renderer/theme/palettes'
 import { SiteConfig, LlmSettings } from '../../../shared/types'
 import { defaultSites } from '../../../shared/defaultSites'
 import { Button } from './ui/button'
@@ -373,19 +374,13 @@ export const SettingsModal: React.FC<SettingsProps> = ({
             <div className='mt-4'>
               <div className={cn('mb-2 font-medium leading-none', isMacOS ? 'text-sm' : 'text-base')}>配色</div>
               <div className='grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4'>
-                {([
-                  { key: 'default', label: '默认' },
-                  { key: 'ocean', label: '海洋' },
-                  { key: 'forest', label: '森林' },
-                  { key: 'violet', label: '紫罗兰' },
-                  { key: 'rose', label: '玫瑰' }
-                ] as { key: ColorTheme; label: string }[]).map(p => (
+                {getAllPalettes().map(p => (
                   <button
-                    key={p.key}
-                    onClick={() => handleColorThemeChange(p.key)}
+                    key={p.id}
+                    onClick={() => handleColorThemeChange(p.id)}
                     className={cn(
                       'group flex items-center justify-between rounded-md border border-input bg-background p-2 text-left text-sm hover:bg-accent',
-                      colorTheme === p.key && 'ring-1 ring-ring'
+                      colorTheme === p.id && 'ring-1 ring-ring'
                     )}
                     title={p.label}
                   >
@@ -393,7 +388,7 @@ export const SettingsModal: React.FC<SettingsProps> = ({
                       <span className='inline-block h-5 w-5 rounded-full bg-primary ring-2 ring-ring' />
                       <span>{p.label}</span>
                     </div>
-                    {colorTheme === p.key && (
+                    {colorTheme === p.id && (
                       <span className='text-xs text-muted-foreground'>已选</span>
                     )}
                   </button>

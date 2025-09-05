@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { ColorTheme } from '@renderer/types/theme'
+import { getAllPalettes } from '@renderer/theme/palettes'
 
 type Theme = 'dark' | 'light' | 'system'
 
@@ -101,13 +102,8 @@ export function ThemeProvider({
   // 当 colorTheme 改变时更新 classList
   useEffect(() => {
     const root = window.document.documentElement
-    root.classList.remove(
-      'theme-default',
-      'theme-ocean',
-      'theme-forest',
-      'theme-violet',
-      'theme-rose'
-    )
+    const all = getAllPalettes().map(p => `theme-${p.id}`)
+    root.classList.remove(...all)
     root.classList.add(`theme-${colorTheme}`)
   }, [colorTheme])
 

@@ -1,3 +1,5 @@
 export type Theme = 'light' | 'dark' | 'system'
 
-export type ColorTheme = 'default' | 'ocean' | 'forest' | 'violet' | 'rose'
+import type { ColorPaletteId } from '@renderer/theme/palettes'
+
+export type ColorTheme = ColorPaletteId
