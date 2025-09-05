@@ -1,6 +1,7 @@
 export const COLOR_PALETTES = {
   default: { label: '默认' },
-  ocean: { label: '海洋' }
+  ocean: { label: '海洋' },
+  twitter: { label: 'Twitter' }
 } as const
 
 export type ColorPaletteId = keyof typeof COLOR_PALETTES
