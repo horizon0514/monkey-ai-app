@@ -24,7 +24,7 @@ import {
   PromptInputTools
 } from '@renderer/components/ui/ai-elements/prompt-input'
 import { Actions } from '@renderer/components/ui/ai-elements/actions'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { Response } from '@renderer/components/ui/ai-elements/response'
 import { GlobeIcon, RefreshCcwIcon, CopyIcon } from 'lucide-react'
@@ -58,7 +58,20 @@ export const ChatView = () => {
   const [input, setInput] = useState('')
   const [model, setModel] = useState<string>(models[0].value)
   const [webSearch, setWebSearch] = useState(false)
-  const conversationId = useMemo(() => crypto.randomUUID(), [])
+  const [conversationId, setConversationId] = useState<string>(() =>
+    crypto.randomUUID()
+  )
+  const [conversations, setConversations] = useState<Array<{
+    id: string
+    title?: string | null
+    model?: string | null
+  }>>([])
+  const [historyMessages, setHistoryMessages] = useState<Array<{
+    id: string
+    conversationId: string
+    role: 'user' | 'assistant'
+    content: string
+  }>>([])
   const { messages, sendMessage, status, regenerate } = useChat({
     transport: new DefaultChatTransport({
       api: 'http://127.0.0.1:3399/chat/stream'
@@ -66,8 +79,33 @@ export const ChatView = () => {
   })
 
   useEffect(() => {
-    // no-op, placeholder if we later want to fetch history
+    const loadConversations = async () => {
+      try {
+        const base = await window.electron.getLocalApiBase()
+        const res = await fetch(`${base}/conversations`)
+        const json = await res.json()
+        if (json?.ok && Array.isArray(json.conversations)) {
+          setConversations(json.conversations)
+        }
+      } catch (e) {
+        console.error('Failed to load conversations', e)
+      }
+    }
+    loadConversations()
   }, [])
+
+  const loadHistory = async (id: string) => {
+    try {
+      const base = await window.electron.getLocalApiBase()
+      const res = await fetch(`${base}/conversations/${id}/messages`)
+      const json = await res.json()
+      if (json?.ok && Array.isArray(json.messages)) {
+        setHistoryMessages(json.messages)
+      }
+    } catch (e) {
+      console.error('Failed to load messages', e)
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -87,10 +125,55 @@ export const ChatView = () => {
   }
 
   return (
-    <div className='relative mx-auto size-full h-[calc(100vh-48px)] max-w-4xl p-6'>
-      <div className='flex h-full flex-col'>
+    <div className='relative mx-auto size-full h-[calc(100vh-48px)] max-w-6xl p-6'>
+      <div className='flex h-full gap-4'>
+        <aside className='w-64 shrink-0 overflow-hidden rounded-lg border'>
+          <div className='flex items-center justify-between border-b px-3 py-2'>
+            <span className='text-sm font-medium text-muted-foreground'>对话记录</span>
+            <button
+              className='rounded bg-primary px-2 py-1 text-xs text-primary-foreground hover:opacity-90'
+              onClick={() => {
+                const id = crypto.randomUUID()
+                setConversationId(id)
+                setHistoryMessages([])
+              }}
+            >
+              新建
+            </button>
+          </div>
+          <div className='h-[calc(100%-40px)] overflow-y-auto p-2'>
+            {conversations.map(conv => (
+              <button
+                key={conv.id}
+                onClick={() => {
+                  setConversationId(conv.id)
+                  loadHistory(conv.id)
+                }}
+                className={`mb-1 w-full rounded px-3 py-2 text-left text-sm hover:bg-muted/60 ${
+                  conv.id === conversationId ? 'bg-primary/10 text-primary' : ''
+                }`}
+                title={conv.title || 'Untitled'}
+              >
+                <div className='truncate'>{conv.title || 'Untitled'}</div>
+                <div className='truncate text-xs text-muted-foreground'>
+                  {conv.model || ''}
+                </div>
+              </button>
+            ))}
+          </div>
+        </aside>
+        <div className='flex h-full flex-1 flex-col'>
         <Conversation className='h-full'>
           <ConversationContent>
+            {historyMessages.map(m => (
+              <div key={`hist-${m.id}`}>
+                <Message from={m.role}>
+                  <MessageContent>
+                    <Response>{m.content}</Response>
+                  </MessageContent>
+                </Message>
+              </div>
+            ))}
             {messages.map(message => (
               <div key={message.id}>
                 {message.role === 'assistant' &&
@@ -221,6 +304,7 @@ export const ChatView = () => {
           </PromptInputToolbar>
         </PromptInput>
       </div>
+    </div>
     </div>
   )
 }
