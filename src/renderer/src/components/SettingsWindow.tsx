@@ -19,6 +19,7 @@ import { getAllPalettes } from '@renderer/theme/palettes'
 import { SiteConfig, LlmSettings } from '../../../shared/types'
 import { defaultSites } from '../../../shared/defaultSites'
 import { Button } from './ui/button'
+import { Input } from './ui/input'
 
 type SettingsProps = {
   inline?: boolean
@@ -312,11 +313,10 @@ export const SettingsModal: React.FC<SettingsProps> = ({
         <section className='min-w-0 flex-1 overflow-y-auto p-6 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/40 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-2'>
           {/* 搜索 */}
           <div className='mb-4'>
-            <input
+            <Input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder='搜索设置或助手…'
-              className='w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus:ring-1 focus:ring-ring'
             />
           </div>
 
@@ -336,38 +336,28 @@ export const SettingsModal: React.FC<SettingsProps> = ({
             <p className='text-sm text-muted-foreground'>
               选择你喜欢的主题外观。
             </p>
-            <div className='flex items-center space-x-2'>
-              <button
+            <div className='flex items-center gap-2'>
+              <Button
+                variant={currentTheme === 'light' ? 'default' : 'outline'}
+                size={isMacOS ? 'sm' : 'default'}
                 onClick={() => handleThemeChange('light')}
-                className={cn(
-                  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-input bg-background text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
-                  isMacOS ? 'h-8 px-3 py-1.5' : 'h-9 px-4 py-2',
-                  currentTheme === 'light' && 'bg-accent text-accent-foreground'
-                )}
               >
                 <Sun size={16} /> 浅色
-              </button>
-              <button
+              </Button>
+              <Button
+                variant={currentTheme === 'dark' ? 'default' : 'outline'}
+                size={isMacOS ? 'sm' : 'default'}
                 onClick={() => handleThemeChange('dark')}
-                className={cn(
-                  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-input bg-background text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
-                  isMacOS ? 'h-8 px-3 py-1.5' : 'h-9 px-4 py-2',
-                  currentTheme === 'dark' && 'bg-accent text-accent-foreground'
-                )}
               >
                 <Moon size={16} /> 深色
-              </button>
-              <button
+              </Button>
+              <Button
+                variant={currentTheme === 'system' ? 'default' : 'outline'}
+                size={isMacOS ? 'sm' : 'default'}
                 onClick={() => handleThemeChange('system')}
-                className={cn(
-                  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-input bg-background text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
-                  isMacOS ? 'h-8 px-3 py-1.5' : 'h-9 px-4 py-2',
-                  currentTheme === 'system' &&
-                    'bg-accent text-accent-foreground'
-                )}
               >
                 <Monitor size={16} /> 跟随系统
-              </button>
+              </Button>
             </div>
 
             {/* 颜色主题 */}
@@ -375,13 +365,11 @@ export const SettingsModal: React.FC<SettingsProps> = ({
               <div className={cn('mb-2 font-medium leading-none', isMacOS ? 'text-sm' : 'text-base')}>配色</div>
               <div className='grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4'>
                 {getAllPalettes().map(p => (
-                  <button
+                  <Button
                     key={p.id}
+                    variant={colorTheme === p.id ? 'default' : 'outline'}
                     onClick={() => handleColorThemeChange(p.id)}
-                    className={cn(
-                      'group flex items-center justify-between rounded-md border border-input bg-background p-2 text-left text-sm hover:bg-accent',
-                      colorTheme === p.id && 'ring-1 ring-ring'
-                    )}
+                    className='justify-between p-2'
                     title={p.label}
                   >
                     <div className='flex items-center gap-2'>
@@ -389,9 +377,9 @@ export const SettingsModal: React.FC<SettingsProps> = ({
                       <span>{p.label}</span>
                     </div>
                     {colorTheme === p.id && (
-                      <span className='text-xs text-muted-foreground'>已选</span>
+                      <span className='text-xs opacity-80'>已选</span>
                     )}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -424,37 +412,35 @@ export const SettingsModal: React.FC<SettingsProps> = ({
                   <label className='text-xs text-muted-foreground'>
                     Provider
                   </label>
-                  <input
+                  <Input
                     value={'OpenRouter'}
                     disabled
-                    className='rounded-md border border-input bg-muted/30 px-3 py-2 text-sm outline-none'
+                    className='bg-muted/30'
                   />
                 </div>
                 <div className='flex flex-col gap-1.5'>
                   <label className='text-xs text-muted-foreground'>
                     Base URL
                   </label>
-                  <input
+                  <Input
                     value={llmDraft.baseUrl}
                     onChange={e =>
                       setLlmDraft(d => ({ ...d, baseUrl: e.target.value }))
                     }
                     placeholder='https://openrouter.ai/api/v1'
-                    className='rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring'
                   />
                 </div>
                 <div className='flex flex-col gap-1.5 md:col-span-2'>
                   <label className='text-xs text-muted-foreground'>
                     API Key
                   </label>
-                  <input
+                  <Input
                     type='password'
                     value={llmDraft.apiKey}
                     onChange={e =>
                       setLlmDraft(d => ({ ...d, apiKey: e.target.value }))
                     }
                     placeholder='sk-or-v1-...'
-                    className='rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring'
                   />
                 </div>
               </div>
