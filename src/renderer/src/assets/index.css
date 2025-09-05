@@ -1,5 +1,6 @@
 @import './themes/default.css';
 @import './themes/ocean.css';
+@import './themes/twitter.css';
 
 @tailwind base;
 @tailwind components;
@@ -81,6 +82,9 @@ body,
     all: initial;
   }
   html.theme-ocean {
+    all: initial;
+  }
+  html.theme-twitter {
     all: initial;
   }
 }
