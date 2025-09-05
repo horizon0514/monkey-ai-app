@@ -1,9 +1,11 @@
+@import './themes/default.css';
+@import './themes/ocean.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import './themes/default.css';
-@import './themes/ocean.css';
+
 
 html,
 body,
@@ -79,8 +81,4 @@ body,
   /* Ensure palette overrides win over base */
   html.theme-default { all: initial; }
   html.theme-ocean { all: initial; }
-  html.theme-default, html.dark.theme-default,
-  html.theme-ocean, html.dark.theme-ocean {
-    all: unset;
-  }
 }
