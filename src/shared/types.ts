@@ -18,7 +18,21 @@ export interface SiteUnifyRule {
   flags?: {
     darkModeFix?: boolean
     compact?: boolean
+    // Whether to inject baseline CSS reset/tweaks (default false)
+    baselineCss?: boolean
   }
+  // Add/remove classes for matched elements
+  classTweaks?: Array<{
+    selector: string
+    add?: string[]
+    remove?: string[]
+  }>
+  // Inline style overrides for matched elements
+  styleTweaks?: Array<{
+    selector: string
+    styles: Record<string, string>
+    important?: boolean
+  }>
 }
 
 export type DomainToUnifyRules = Record<string, SiteUnifyRule>

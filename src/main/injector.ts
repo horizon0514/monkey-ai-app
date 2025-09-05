@@ -51,7 +51,12 @@ export class UnifyInjector {
 
   private async injectBaselineCss(wc: WebContents) {
     try {
-      await wc.insertCSS(BASELINE_CSS)
+      const url = wc.getURL() || ''
+      const host = new URL(url).host
+      const cfg = this.getConfigForHost(host)
+      if (cfg.flags?.baselineCss) {
+        await wc.insertCSS(BASELINE_CSS)
+      }
     } catch (e) {
       // ignore
     }
@@ -75,6 +80,55 @@ export class UnifyInjector {
       if (cfg.extraCSS && cfg.extraCSS.length > 0) {
         const cssText = cfg.extraCSS.join('\n')
         await wc.insertCSS(cssText)
+      }
+
+      // class tweaks
+      if (cfg.classTweaks && cfg.classTweaks.length > 0) {
+        const script = `(() => {
+          const tweaks = ${JSON.stringify(cfg.classTweaks)};
+          for (const t of tweaks) {
+            try {
+              document.querySelectorAll(t.selector).forEach(el => {
+                if (t.remove) el.classList.remove(...t.remove);
+                if (t.add) el.classList.add(...t.add);
+              });
+            } catch {}
+          }
+          const mo = new MutationObserver(() => {
+            for (const t of tweaks) {
+              try {
+                document.querySelectorAll(t.selector).forEach(el => {
+                  if (t.remove) el.classList.remove(...t.remove);
+                  if (t.add) el.classList.add(...t.add);
+                });
+              } catch {}
+            }
+          });
+          mo.observe(document.documentElement, { childList: true, subtree: true });
+        })();`
+        await wc.executeJavaScript(script, true)
+      }
+
+      // style tweaks
+      if (cfg.styleTweaks && cfg.styleTweaks.length > 0) {
+        const script = `(() => {
+          const tweaks = ${JSON.stringify(cfg.styleTweaks)};
+          function apply() {
+            for (const t of tweaks) {
+              try {
+                document.querySelectorAll(t.selector).forEach(el => {
+                  for (const [k,v] of Object.entries(t.styles || {})) {
+                    (el as HTMLElement).style.setProperty(k, v, t.important ? 'important' : '');
+                  }
+                });
+              } catch {}
+            }
+          }
+          apply();
+          const mo = new MutationObserver(apply);
+          mo.observe(document.documentElement, { childList: true, subtree: true });
+        })();`
+        await wc.executeJavaScript(script, true)
       }
     } catch {
       // ignore
