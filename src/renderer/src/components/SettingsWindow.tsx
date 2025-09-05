@@ -14,7 +14,7 @@ import {
   Save,
   X
 } from 'lucide-react'
-import { Theme } from '@renderer/types/theme'
+import { Theme, ColorTheme } from '@renderer/types/theme'
 import { SiteConfig, LlmSettings } from '../../../shared/types'
 import { defaultSites } from '../../../shared/defaultSites'
 import { Button } from './ui/button'
@@ -30,6 +30,7 @@ export const SettingsModal: React.FC<SettingsProps> = ({
 }) => {
   const isMacOS = window.platform.os === 'darwin'
   const [currentTheme, setCurrentTheme] = useState<Theme>('system')
+  const [colorTheme, setColorTheme] = useState<ColorTheme>('default')
   const [sites, setSites] = useState<SiteConfig[]>(defaultSites)
   const [activeSection, setActiveSection] = useState<
     'appearance' | 'assistants' | 'about'
@@ -66,6 +67,9 @@ export const SettingsModal: React.FC<SettingsProps> = ({
   useEffect(() => {
     window.electron.getTheme().then((theme: Theme) => {
       setCurrentTheme(theme)
+    })
+    window.electron.getColorTheme().then((palette: ColorTheme) => {
+      setColorTheme(palette)
     })
   }, [])
 
@@ -106,6 +110,11 @@ export const SettingsModal: React.FC<SettingsProps> = ({
   const handleThemeChange = async (theme: Theme) => {
     await window.electron.setTheme(theme)
     setCurrentTheme(theme)
+  }
+
+  const handleColorThemeChange = async (palette: ColorTheme) => {
+    await window.electron.setColorTheme(palette)
+    setColorTheme(palette)
   }
 
   // 保存到主进程并更新本地
@@ -358,6 +367,38 @@ export const SettingsModal: React.FC<SettingsProps> = ({
               >
                 <Monitor size={16} /> 跟随系统
               </button>
+            </div>
+
+            {/* 颜色主题 */}
+            <div className='mt-4'>
+              <div className={cn('mb-2 font-medium leading-none', isMacOS ? 'text-sm' : 'text-base')}>配色</div>
+              <div className='grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4'>
+                {([
+                  { key: 'default', label: '默认' },
+                  { key: 'ocean', label: '海洋' },
+                  { key: 'forest', label: '森林' },
+                  { key: 'violet', label: '紫罗兰' },
+                  { key: 'rose', label: '玫瑰' }
+                ] as { key: ColorTheme; label: string }[]).map(p => (
+                  <button
+                    key={p.key}
+                    onClick={() => handleColorThemeChange(p.key)}
+                    className={cn(
+                      'group flex items-center justify-between rounded-md border border-input bg-background p-2 text-left text-sm hover:bg-accent',
+                      colorTheme === p.key && 'ring-1 ring-ring'
+                    )}
+                    title={p.label}
+                  >
+                    <div className='flex items-center gap-2'>
+                      <span className='inline-block h-5 w-5 rounded-full bg-primary ring-2 ring-ring' />
+                      <span>{p.label}</span>
+                    </div>
+                    {colorTheme === p.key && (
+                      <span className='text-xs text-muted-foreground'>已选</span>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

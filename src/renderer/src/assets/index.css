@@ -70,4 +70,40 @@ body,
     --input: 215 14% 22%;
     --ring: 216 12% 84%;
   }
+
+  /* Color palettes override: attach to html via .theme-xxx */
+  .theme-default {
+    --primary: 220 90% 56%;
+    --accent: 220 92% 95%;
+    --accent-foreground: 220 90% 35%;
+    --ring: 220 90% 40%;
+  }
+
+  .theme-ocean {
+    --primary: 196 100% 42%;
+    --accent: 196 100% 95%;
+    --accent-foreground: 196 100% 28%;
+    --ring: 196 100% 32%;
+  }
+
+  .theme-forest {
+    --primary: 152 61% 35%;
+    --accent: 152 61% 94%;
+    --accent-foreground: 152 61% 24%;
+    --ring: 152 61% 30%;
+  }
+
+  .theme-violet {
+    --primary: 262 83% 58%;
+    --accent: 262 83% 95%;
+    --accent-foreground: 262 83% 40%;
+    --ring: 262 83% 45%;
+  }
+
+  .theme-rose {
+    --primary: 343 81% 60%;
+    --accent: 343 81% 96%;
+    --accent-foreground: 343 81% 45%;
+    --ring: 343 81% 50%;
+  }
 }

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import type { ColorTheme } from '@renderer/types/theme'
 
 type Theme = 'dark' | 'light' | 'system'
 
@@ -11,11 +12,15 @@ type ThemeProviderProps = {
 type ThemeProviderState = {
   theme: Theme
   setTheme: (theme: Theme) => void
+  colorTheme: ColorTheme
+  setColorTheme: (palette: ColorTheme) => void
 }
 
 const initialState: ThemeProviderState = {
   theme: 'system',
-  setTheme: () => null
+  setTheme: () => null,
+  colorTheme: 'default',
+  setColorTheme: () => null
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
@@ -29,11 +34,17 @@ export function ThemeProvider({
   const [theme, setThemeState] = useState<Theme>(
     () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
   )
+  const [colorTheme, setColorThemeState] = useState<ColorTheme>('default')
 
   useEffect(() => {
     // 初始化时获取当前有效主题
     window.electron.getEffectiveTheme().then(effectiveTheme => {
       setThemeState(effectiveTheme as Theme)
+    })
+
+    // 初始化色板
+    window.electron.getColorTheme().then((palette: any) => {
+      setColorThemeState((palette as ColorTheme) || 'default')
     })
 
     // 监听主题变化
@@ -49,6 +60,14 @@ export function ThemeProvider({
     }
 
     window.electron.ipcRenderer.on('theme-changed', themeChangedHandler)
+    const colorThemeChangedHandler = (_event: unknown, ...args: unknown[]) => {
+      const newPalette = (args[0] as ColorTheme) || 'default'
+      setColorThemeState(newPalette)
+    }
+    window.electron.ipcRenderer.on(
+      'color-theme-changed',
+      colorThemeChangedHandler
+    )
     window.electron.ipcRenderer.on(
       'system-theme-changed',
       systemThemeChangedHandler
@@ -63,6 +82,10 @@ export function ThemeProvider({
         'system-theme-changed',
         systemThemeChangedHandler
       )
+      window.electron.ipcRenderer.removeListener(
+        'color-theme-changed',
+        colorThemeChangedHandler
+      )
     }
   }, [theme])
 
@@ -75,6 +98,19 @@ export function ThemeProvider({
     }
   }, [theme])
 
+  // 当 colorTheme 改变时更新 classList
+  useEffect(() => {
+    const root = window.document.documentElement
+    root.classList.remove(
+      'theme-default',
+      'theme-ocean',
+      'theme-forest',
+      'theme-violet',
+      'theme-rose'
+    )
+    root.classList.add(`theme-${colorTheme}`)
+  }, [colorTheme])
+
   const setTheme = (newTheme: Theme) => {
     localStorage.setItem(storageKey, newTheme)
     setThemeState(newTheme)
@@ -82,9 +118,16 @@ export function ThemeProvider({
     window.electron.setTheme(newTheme)
   }
 
+  const setColorTheme = (palette: ColorTheme) => {
+    setColorThemeState(palette)
+    window.electron.setColorTheme(palette)
+  }
+
   const value = {
     theme,
-    setTheme
+    setTheme,
+    colorTheme,
+    setColorTheme
   }
 
   return (
