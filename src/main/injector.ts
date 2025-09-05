@@ -114,15 +114,22 @@ export class UnifyInjector {
         const script = `(() => {
           const tweaks = ${JSON.stringify(cfg.styleTweaks)};
           function apply() {
-            for (const t of tweaks) {
-              try {
-                document.querySelectorAll(t.selector).forEach(el => {
-                  for (const [k,v] of Object.entries(t.styles || {})) {
-                    (el as HTMLElement).style.setProperty(k, v, t.important ? 'important' : '');
+            try {
+              for (const t of tweaks) {
+                const nodes = document.querySelectorAll(t.selector);
+                nodes.forEach(function(node){
+                  const el = node;
+                  if (el && el.style) {
+                    const styles = t.styles || {};
+                    for (const k in styles) {
+                      if (Object.prototype.hasOwnProperty.call(styles, k)) {
+                        el.style.setProperty(k, styles[k], t.important ? 'important' : '');
+                      }
+                    }
                   }
                 });
-              } catch {}
-            }
+              }
+            } catch {}
           }
           apply();
           const mo = new MutationObserver(apply);
