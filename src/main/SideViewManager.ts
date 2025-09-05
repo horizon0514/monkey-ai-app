@@ -1,4 +1,6 @@
 import { BrowserWindow, WebContentsView, WebPreferences, shell } from 'electron'
+import { UnifyInjector } from './injector'
+import { unifyRules } from '../shared/unifyRules'
 import Store from 'electron-store'
 import { defaultSites } from '../shared/defaultSites'
 import { SiteConfig } from '../shared/types'
@@ -64,10 +66,12 @@ export class SideViewManager {
   private siteConfigs: Map<string, SiteConfig> = new Map()
   private readonly mainWindow: BrowserWindow
   private readonly store: Store
+  private readonly injector: UnifyInjector
 
   constructor(mainWindow: BrowserWindow) {
     this.mainWindow = mainWindow
     this.store = new Store()
+    this.injector = new UnifyInjector(unifyRules)
 
     // 初始化侧边栏状态
     this.lastSidebarWidth = this.store.get(
@@ -204,6 +208,9 @@ export class SideViewManager {
 
     // 处理新窗口与导航状态
     this.attachNavigationHandlers(view)
+
+    // 注入统一样式与清理逻辑
+    this.injector.attach(view.webContents)
 
     // 加载URL
     this.loadUrl(view, id)
