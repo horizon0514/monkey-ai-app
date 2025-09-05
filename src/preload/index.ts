@@ -23,12 +23,6 @@ const api = {
   getCurrentUrl: () => ipcRenderer.invoke('get-current-url'),
   hideCurrentView: () => ipcRenderer.invoke('hide-current-view'),
   getLocalApiBase: () => ipcRenderer.invoke('get-local-api-base'),
-  // Chat history
-  listConversations: () => ipcRenderer.invoke('db-list-conversations'),
-  getMessages: (conversationId: string) =>
-    ipcRenderer.invoke('db-get-messages', conversationId),
-  deleteConversation: (conversationId: string) =>
-    ipcRenderer.invoke('db-delete-conversation', conversationId),
   // LLM settings
   getLlmSettings: () => ipcRenderer.invoke('get-llm-settings'),
   setLlmSettings: (settings: unknown) =>
