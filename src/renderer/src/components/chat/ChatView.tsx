@@ -121,7 +121,8 @@ export const ChatView = () => {
                             </MessageContent>
                           </Message>
                           {message.role === 'assistant' &&
-                            i === messages.length - 1 && (
+                            i === message.parts.length - 1 &&
+                            message.id === messages.at(-1)?.id && (
                               <Actions className='mt-2'>
                                 <Action
                                   onClick={() => regenerate()}
