@@ -71,8 +71,8 @@ body,
     --ring: 216 12% 84%;
   }
 
-  /* Color palettes override: attach to html via .theme-xxx */
-  html.theme-default {
+  /* data-theme palettes */
+  :root[data-theme='default'] {
     --background: 223.8136 -172.5242% 100.0000%;
     --foreground: 223.8136 0.0000% 3.9388%;
     --card: 223.8136 -172.5242% 100.0000%;
@@ -121,7 +121,7 @@ body,
     --spacing: 0.25rem;
   }
 
-  html.dark.theme-default {
+  .dark[data-theme='default'] {
     --background: 223.8136 0.0000% 3.9388%;
     --foreground: 223.8136 0.0004% 98.0256%;
     --card: 223.8136 0.0000% 9.0527%;
@@ -168,7 +168,7 @@ body,
     --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
   }
 
-  html.theme-ocean {
+  :root[data-theme='ocean'] {
     --background: 208 100% 97.0588%;
     --foreground: 216.9231 19.1176% 26.6667%;
     --card: 0 0% 100%;
@@ -217,7 +217,7 @@ body,
     --spacing: 0.25rem;
   }
 
-  html.dark.theme-ocean {
+  .dark[data-theme='ocean'] {
     --background: 222.2222 47.3684% 11.1765%;
     --foreground: 216.0000 12.1951% 83.9216%;
     --card: 217.2414 32.5843% 17.4510%;

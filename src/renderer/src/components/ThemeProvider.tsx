@@ -60,18 +60,19 @@ export function ThemeProvider({
       setThemeState(newTheme)
     }
 
-    window.electron.ipcRenderer.on('theme-changed', themeChangedHandler)
     const colorThemeChangedHandler = (_event: unknown, ...args: unknown[]) => {
       const newPalette = (args[0] as ColorTheme) || 'default'
       setColorThemeState(newPalette)
     }
-    window.electron.ipcRenderer.on(
-      'color-theme-changed',
-      colorThemeChangedHandler
-    )
+
+    window.electron.ipcRenderer.on('theme-changed', themeChangedHandler)
     window.electron.ipcRenderer.on(
       'system-theme-changed',
       systemThemeChangedHandler
+    )
+    window.electron.ipcRenderer.on(
+      'color-theme-changed',
+      colorThemeChangedHandler
     )
 
     return () => {
@@ -99,12 +100,15 @@ export function ThemeProvider({
     }
   }, [theme])
 
-  // 当 colorTheme 改变时更新 classList
+  // 当 colorTheme 改变时更新选择器
   useEffect(() => {
     const root = window.document.documentElement
+    // 兼容旧的 class 方案
     const all = getAllPalettes().map(p => `theme-${p.id}`)
     root.classList.remove(...all)
     root.classList.add(`theme-${colorTheme}`)
+    // 新的 data-theme 方案
+    root.setAttribute('data-theme', colorTheme)
   }, [colorTheme])
 
   const setTheme = (newTheme: Theme) => {
