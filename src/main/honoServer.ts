@@ -35,6 +35,45 @@ export class HonoServer {
 
     app.get('/health', c => c.json({ ok: true }))
 
+    // Settings CRUD via Hono so renderer can call without IPC
+    app.get('/settings/:key', async c => {
+      const key = c.req.param('key')
+      const rows = await db
+        .select()
+        .from(schema.settings)
+        .where(eq(schema.settings.key, key))
+      if (rows.length === 0) return c.json({ ok: false, error: 'NOT_FOUND' }, 404)
+      return c.json({ ok: true, value: rows[0].value })
+    })
+    app.post('/settings/:key', async c => {
+      const key = c.req.param('key')
+      const body = (await c.req.json().catch(() => ({}))) as { value?: unknown }
+      const value = JSON.stringify(body?.value ?? null)
+      // upsert
+      try {
+        const exist = await db
+          .select()
+          .from(schema.settings)
+          .where(eq(schema.settings.key, key))
+          .limit(1)
+        if (exist.length > 0) {
+          await db
+            .update(schema.settings)
+            .set({ value, updatedAt: new Date() })
+            .where(eq(schema.settings.key, key))
+        } else {
+          await db.insert(schema.settings).values({
+            key,
+            value,
+            updatedAt: new Date()
+          })
+        }
+        return c.json({ ok: true })
+      } catch (e: any) {
+        return c.json({ ok: false, error: 'DB_ERROR', detail: String(e?.message || e) }, 500)
+      }
+    })
+
     // List conversations
     app.get('/conversations', async c => {
       const rows = await db.select().from(schema.conversations)
