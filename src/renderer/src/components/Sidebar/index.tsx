@@ -1,4 +1,5 @@
 import React from 'react'
+import { Button } from '@renderer/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@renderer/components/ui/tabs'
 import {
   Bot,
@@ -94,16 +95,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </Tabs>
       </div>
       <div className='app-region-no-drag p-2'>
-        <button
+        <Button
+          variant='ghost'
+          className='app-region-no-drag flex w-full items-center justify-start gap-3 px-4 py-2.5 text-sm font-medium'
           onClick={handleSettingsClick}
-          className='app-region-no-drag flex w-full items-center gap-3 rounded-md px-4 py-2.5 text-sm font-medium text-muted-foreground no-drag hover:bg-muted/50 hover:text-foreground/90'
         >
-          <Settings
-            size={18}
-            className='shrink-0'
-          />
+          <Settings size={18} className='shrink-0' />
           设置
-        </button>
+        </Button>
       </div>
     </div>
   )
