@@ -100,7 +100,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className='app-region-no-drag flex w-full items-center justify-start gap-3 px-4 py-2.5 text-sm font-medium'
           onClick={handleSettingsClick}
         >
-          <Settings size={18} className='shrink-0' />
+          <Settings
+            size={18}
+            className='shrink-0'
+          />
           设置
         </Button>
       </div>

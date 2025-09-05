@@ -369,7 +369,14 @@ export const SettingsModal: React.FC<SettingsProps> = ({
 
             {/* 颜色主题 */}
             <div className='mt-4'>
-              <div className={cn('mb-2 font-medium leading-none', isMacOS ? 'text-sm' : 'text-base')}>配色</div>
+              <div
+                className={cn(
+                  'mb-2 font-medium leading-none',
+                  isMacOS ? 'text-sm' : 'text-base'
+                )}
+              >
+                配色
+              </div>
               <div className='w-[240px]'>
                 <Select
                   value={colorTheme}

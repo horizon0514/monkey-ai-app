@@ -5,8 +5,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
-
 html,
 body,
 :root {
@@ -79,6 +77,10 @@ body,
 
 @layer utilities {
   /* Ensure palette overrides win over base */
-  html.theme-default { all: initial; }
-  html.theme-ocean { all: initial; }
+  html.theme-default {
+    all: initial;
+  }
+  html.theme-ocean {
+    all: initial;
+  }
 }

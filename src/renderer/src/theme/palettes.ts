@@ -10,4 +10,3 @@ export const getAllPalettes = () =>
     id: id as ColorPaletteId,
     label: meta.label
   }))
-

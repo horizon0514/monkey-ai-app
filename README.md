@@ -10,6 +10,7 @@
 - 所有版本: [GitHub Releases](https://github.com/horizon0514/monkey-ai-app/releases)
 
 下载后在 Assets 中选择对应系统的安装包:
+
 - Windows: .exe 或 .msi
 - macOS: .dmg 或 .zip
 - Linux: .AppImage / .deb / .rpm
