@@ -21,9 +21,13 @@ if (process.env.NODE_ENV !== 'production') {
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     require('electron-reloader')(module, { debug: false })
-  } catch (err) {
+  } catch (err: unknown) {
+    const message =
+      typeof err === 'object' && err && 'message' in err
+        ? String((err as any).message)
+        : String(err)
     // eslint-disable-next-line no-console
-    console.warn('electron-reloader not active:', err?.message || err)
+    console.warn('electron-reloader not active:', message)
   }
 }
 

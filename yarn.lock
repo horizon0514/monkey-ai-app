@@ -2400,7 +2400,7 @@ chalk@^2.4.2:
     escape-string-regexp "^1.0.5"
     supports-color "^5.3.0"
 
-chalk@^4.0.0, chalk@^4.0.2, chalk@^4.1.2:
+chalk@^4.0.0, chalk@^4.0.2, chalk@^4.1.0, chalk@^4.1.2:
   version "4.1.2"
   resolved "https://registry.yarnpkg.com/chalk/-/chalk-4.1.2.tgz#aac4e2b7734a740867aeb16bf02aad556a1e7a01"
   integrity sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==
@@ -2471,6 +2471,21 @@ chevrotain@~11.0.3:
     "@chevrotain/types" "11.0.3"
     "@chevrotain/utils" "11.0.3"
     lodash-es "4.17.21"
+
+chokidar@^3.5.0:
+  version "3.6.0"
+  resolved "https://registry.yarnpkg.com/chokidar/-/chokidar-3.6.0.tgz#197c6cc669ef2a8dc5e7b4d97ee4e092c3eb0d5b"
+  integrity sha512-7VT13fmjotKpGipCW9JEQAusEPE+Ei8nl6/g4FBAmIm0GOOLMua9NDDo/DWp0ZAxCr3cPq5ZpBqmPAQgDda2Pw==
+  dependencies:
+    anymatch "~3.1.2"
+    braces "~3.0.2"
+    glob-parent "~5.1.2"
+    is-binary-path "~2.1.0"
+    is-glob "~4.0.1"
+    normalize-path "~3.0.0"
+    readdirp "~3.6.0"
+  optionalDependencies:
+    fsevents "~2.3.2"
 
 chokidar@^3.5.3:
   version "3.5.3"
@@ -2745,6 +2760,13 @@ crc@^3.8.0:
   integrity sha512-iX3mfgcTMIq3ZKLIsVFAbv7+Mc10kxabAGQb8HvjA1o3T1PIYprbakQ65d3I+2HGHt6nSKkM9PYjgoJO2KcFBQ==
   dependencies:
     buffer "^5.1.0"
+
+cross-env@^7.0.3:
+  version "7.0.3"
+  resolved "https://registry.yarnpkg.com/cross-env/-/cross-env-7.0.3.tgz#865264b29677dc015ba8418918965dd232fc54cf"
+  integrity sha512-+/HKd6EgcQCJGh2PSjZuUitQBQynKor4wrFbRg4DtAgS1aWO+gU52xpH7M9ScGgXSYmAVS9bIJ8EzuaGw0oNAw==
+  dependencies:
+    cross-spawn "^7.0.1"
 
 cross-spawn@^7.0.0, cross-spawn@^7.0.1, cross-spawn@^7.0.3:
   version "7.0.3"
@@ -3077,6 +3099,13 @@ data-uri-to-buffer@^4.0.0:
   resolved "https://registry.yarnpkg.com/data-uri-to-buffer/-/data-uri-to-buffer-4.0.1.tgz#d8feb2b2881e6a4f58c2e08acfd0e2834e26222e"
   integrity sha512-0R9ikRb668HB7QDxT1vkpuUBtqc53YyAwMwGeUFKRojY/NWKvdZ+9UYtRfGmhqNbRkTSVpMbmyhXipFFv2cb/A==
 
+date-time@^3.1.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/date-time/-/date-time-3.1.0.tgz#0d1e934d170579f481ed8df1e2b8ff70ee845e1e"
+  integrity sha512-uqCUKXE5q1PNBXjPqvwhwJf9SwMoAHBgWJ6DcrnS5o+W2JOiIILl0JEdVD8SGujrNS02GGxgwAg2PN2zONgtjg==
+  dependencies:
+    time-zone "^1.0.0"
+
 dayjs@^1.11.13:
   version "1.11.18"
   resolved "https://registry.npmmirror.com/dayjs/-/dayjs-1.11.18.tgz#835fa712aac52ab9dec8b1494098774ed7070a11"
@@ -3311,6 +3340,11 @@ electron-builder@^24.9.1:
     simple-update-notifier "2.0.0"
     yargs "^17.6.2"
 
+electron-is-dev@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/electron-is-dev/-/electron-is-dev-1.2.0.tgz#2e5cea0a1b3ccf1c86f577cee77363ef55deb05e"
+  integrity sha512-R1oD5gMBPS7PVU8gJwH6CtT0e6VSoD0+SzSnYpNm+dBkcijgA+K7VAMHDfnRq/lkKPZArpzplTW6jfiMYosdzw==
+
 electron-publish@24.8.1:
   version "24.8.1"
   resolved "https://registry.yarnpkg.com/electron-publish/-/electron-publish-24.8.1.tgz#4216740372bf4297a429543402a1a15ce8c3560b"
@@ -3323,6 +3357,17 @@ electron-publish@24.8.1:
     fs-extra "^10.1.0"
     lazy-val "^1.0.5"
     mime "^2.5.2"
+
+electron-reloader@^1.2.3:
+  version "1.2.3"
+  resolved "https://registry.yarnpkg.com/electron-reloader/-/electron-reloader-1.2.3.tgz#7e9233ba86f7dfbf1a15e6f57537ad0370fadc5a"
+  integrity sha512-aDnACAzNg0QvQhzw7LYOx/nVS10mEtbuG6M0QQvNQcLnJEwFs6is+EGRCnM+KQlQ4KcTbdwnt07nd7ZjHpY4iw==
+  dependencies:
+    chalk "^4.1.0"
+    chokidar "^3.5.0"
+    date-time "^3.1.0"
+    electron-is-dev "^1.2.0"
+    find-up "^5.0.0"
 
 electron-store@8.1.0:
   version "8.1.0"
@@ -7520,6 +7565,11 @@ throttleit@2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/throttleit/-/throttleit-2.1.0.tgz#a7e4aa0bf4845a5bd10daa39ea0c783f631a07b4"
   integrity sha512-nt6AMGKW1p/70DF/hGBdJB57B8Tspmbp5gfJ8ilhLnt7kkr2ye7hzD6NVG8GGErk2HWF34igrL2CXmNIkzKqKw==
+
+time-zone@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/time-zone/-/time-zone-1.0.0.tgz#99c5bf55958966af6d06d83bdf3800dc82faec5d"
+  integrity sha512-TIsDdtKo6+XrPtiTm1ssmMngN1sAhyKnTO2kunQWqNPWIVvCm15Wmw4SWInwTVgJ5u/Tr04+8Ei9TNcw4x4ONA==
 
 tiny-typed-emitter@^2.1.0:
   version "2.1.0"
