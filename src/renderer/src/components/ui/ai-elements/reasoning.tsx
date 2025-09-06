@@ -164,7 +164,9 @@ export const ReasoningContent = memo(
       )}
       {...props}
     >
-      <Response className='grid gap-2'>{children}</Response>
+      <div className='grid gap-2'>
+        <Response>{children}</Response>
+      </div>
     </CollapsibleContent>
   )
 )

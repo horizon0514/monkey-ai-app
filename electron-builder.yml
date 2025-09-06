@@ -3,14 +3,13 @@ productName: 'ChatMonkey'
 directories:
   buildResources: build
 files:
-  - '!**/.vscode/*'
-  - '!src/*'
+  - '!**/.vscode/**'
+  - '!src/**'
+  - '!screenshot/**'
+  - '!icons/**'
+  - '!resources/**'
+  - '!**/*.map'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
-  - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
-  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
-  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
-asarUnpack:
-  - resources/**
 win:
   executableName: ChatMonkey
   target:
@@ -32,7 +31,6 @@ mac:
   target:
     - target: dmg
       arch:
-        - x64
         - arm64
   identity: null
   hardenedRuntime: false
@@ -48,8 +46,12 @@ dmg:
   artifactName: ${name}-${version}-${arch}.${ext}
 linux:
   target:
-    - AppImage
-    - deb
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
   maintainer: electronjs.org
   category: Utility
 appImage:
@@ -61,3 +63,6 @@ publish:
 asar: true
 compression: maximum
 removePackageScripts: true
+electronLanguages:
+  - en-US
+  - zh-CN
