@@ -5,7 +5,12 @@ import { cn } from '@renderer/lib/utils'
 import { CheckIcon, CopyIcon } from 'lucide-react'
 import type { ComponentProps, HTMLAttributes, ReactNode } from 'react'
 import { createContext, useContext, useState } from 'react'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter'
+import ts from 'react-syntax-highlighter/dist/esm/languages/prism/typescript'
+import js from 'react-syntax-highlighter/dist/esm/languages/prism/javascript'
+import json from 'react-syntax-highlighter/dist/esm/languages/prism/json'
+import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash'
+import markdown from 'react-syntax-highlighter/dist/esm/languages/prism/markdown'
 import {
   oneDark,
   oneLight
@@ -33,71 +38,81 @@ export const CodeBlock = ({
   className,
   children,
   ...props
-}: CodeBlockProps) => (
-  <CodeBlockContext.Provider value={{ code }}>
-    <div
-      className={cn(
-        'relative w-full overflow-hidden rounded-md border bg-background text-foreground',
-        className
-      )}
-      {...props}
-    >
-      <div className='relative'>
-        <SyntaxHighlighter
-          className='overflow-hidden dark:hidden'
-          codeTagProps={{
-            className: 'font-mono text-sm'
-          }}
-          customStyle={{
-            margin: 0,
-            padding: '1rem',
-            fontSize: '0.875rem',
-            background: 'hsl(var(--background))',
-            color: 'hsl(var(--foreground))'
-          }}
-          language={language}
-          lineNumberStyle={{
-            color: 'hsl(var(--muted-foreground))',
-            paddingRight: '1rem',
-            minWidth: '2.5rem'
-          }}
-          showLineNumbers={showLineNumbers}
-          style={oneLight}
+}: CodeBlockProps) =>
+  (
+    // Register only common languages to keep bundle small
+    // Note: registration is idempotent across renders
+    SyntaxHighlighter.registerLanguage('typescript', ts),
+    SyntaxHighlighter.registerLanguage('javascript', js),
+    SyntaxHighlighter.registerLanguage('json', json),
+    SyntaxHighlighter.registerLanguage('bash', bash),
+    SyntaxHighlighter.registerLanguage('markdown', markdown),
+    (
+      <CodeBlockContext.Provider value={{ code }}>
+        <div
+          className={cn(
+            'relative w-full overflow-hidden rounded-md border bg-background text-foreground',
+            className
+          )}
+          {...props}
         >
-          {code}
-        </SyntaxHighlighter>
-        <SyntaxHighlighter
-          className='hidden overflow-hidden dark:block'
-          codeTagProps={{
-            className: 'font-mono text-sm'
-          }}
-          customStyle={{
-            margin: 0,
-            padding: '1rem',
-            fontSize: '0.875rem',
-            background: 'hsl(var(--background))',
-            color: 'hsl(var(--foreground))'
-          }}
-          language={language}
-          lineNumberStyle={{
-            color: 'hsl(var(--muted-foreground))',
-            paddingRight: '1rem',
-            minWidth: '2.5rem'
-          }}
-          showLineNumbers={showLineNumbers}
-          style={oneDark}
-        >
-          {code}
-        </SyntaxHighlighter>
-        {children && (
-          <div className='absolute right-2 top-2 flex items-center gap-2'>
-            {children}
+          <div className='relative'>
+            <SyntaxHighlighter
+              className='overflow-hidden dark:hidden'
+              codeTagProps={{
+                className: 'font-mono text-sm'
+              }}
+              customStyle={{
+                margin: 0,
+                padding: '1rem',
+                fontSize: '0.875rem',
+                background: 'hsl(var(--background))',
+                color: 'hsl(var(--foreground))'
+              }}
+              language={language}
+              lineNumberStyle={{
+                color: 'hsl(var(--muted-foreground))',
+                paddingRight: '1rem',
+                minWidth: '2.5rem'
+              }}
+              showLineNumbers={showLineNumbers}
+              style={oneLight}
+            >
+              {code}
+            </SyntaxHighlighter>
+            <SyntaxHighlighter
+              className='hidden overflow-hidden dark:block'
+              codeTagProps={{
+                className: 'font-mono text-sm'
+              }}
+              customStyle={{
+                margin: 0,
+                padding: '1rem',
+                fontSize: '0.875rem',
+                background: 'hsl(var(--background))',
+                color: 'hsl(var(--foreground))'
+              }}
+              language={language}
+              lineNumberStyle={{
+                color: 'hsl(var(--muted-foreground))',
+                paddingRight: '1rem',
+                minWidth: '2.5rem'
+              }}
+              showLineNumbers={showLineNumbers}
+              style={oneDark}
+            >
+              {code}
+            </SyntaxHighlighter>
+            {children && (
+              <div className='absolute right-2 top-2 flex items-center gap-2'>
+                {children}
+              </div>
+            )}
           </div>
-        )}
-      </div>
-    </div>
-  </CodeBlockContext.Provider>
-)
+        </div>
+      </CodeBlockContext.Provider>
+    )
+  )
 
 export type CodeBlockCopyButtonProps = ComponentProps<typeof Button> & {
   onCopy?: () => void

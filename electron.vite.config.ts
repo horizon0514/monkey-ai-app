@@ -1,5 +1,6 @@
 import { resolve } from 'node:path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
+import { visualizer } from 'rollup-plugin-visualizer'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
@@ -30,6 +31,16 @@ export default defineConfig({
       cssCodeSplit: true,
       reportCompressedSize: true,
       rollupOptions: {
+        plugins: process.env.ANALYZE
+          ? [
+              visualizer({
+                filename: 'stats-renderer.html',
+                template: 'treemap',
+                gzipSize: true,
+                brotliSize: true
+              })
+            ]
+          : [],
         input: {
           index: resolve('src/renderer/index.html'),
           settings: resolve('src/renderer/settings.html')
@@ -41,11 +52,30 @@ export default defineConfig({
                 id.includes('react') ||
                 id.includes('@radix-ui') ||
                 id.includes('zustand') ||
-                id.includes('lucide-react') ||
-                id.includes('embla-carousel') ||
-                id.includes('react-syntax-highlighter')
+                id.includes('lucide-react')
               ) {
                 return 'vendor-ui'
+              }
+              if (
+                id.includes('/node_modules/ai/') ||
+                id.includes('@ai-sdk') ||
+                id.includes('@openrouter/ai-sdk-provider')
+              ) {
+                return 'vendor-ai'
+              }
+              if (
+                id.includes('react-syntax-highlighter') ||
+                id.includes('prismjs') ||
+                id.includes('highlight.js')
+              ) {
+                return 'vendor-code'
+              }
+              if (
+                id.includes('katex') ||
+                id.includes('rehype-katex') ||
+                id.includes('streamdown')
+              ) {
+                return 'vendor-math'
               }
               return 'vendor'
             }
