@@ -14,9 +14,9 @@ const DEFAULT_SIDEBAR_WIDTH = 240 // 默认宽度（像素）
 // 自定义 ResizableHandle 组件
 const CustomResizeHandle = () => {
   return (
-    <ResizableHandle className='group relative'>
+    <ResizableHandle className='group relative border-r-2 border-border/40 !bg-background'>
       {/* 实际的分隔线 */}
-      <div className='absolute left-1/2 top-0 h-full w-[1px] -translate-x-1/2 transform bg-border' />
+      <div className='absolute left-1/2 top-0 h-full w-[1px] -translate-x-1/2 transform' />
       {/* 扩大的交互区域 */}
       <div className='absolute left-1/2 top-0 h-full w-4 -translate-x-1/2 transform cursor-col-resize transition-colors hover:bg-accent/10' />
     </ResizableHandle>

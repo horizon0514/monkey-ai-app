@@ -80,7 +80,7 @@ export const ChatView = () => {
   }
 
   return (
-    <div className='relative mx-auto size-full h-[calc(100vh-48px)] max-w-4xl p-6 bg-white dark:bg-secondary border border-border rounded-xl'>
+    <div className='relative mx-auto size-full h-[calc(100vh-48px)] bg-white p-6 dark:bg-secondary'>
       <div className='flex h-full flex-col'>
         <Conversation className='h-full'>
           <ConversationContent>
@@ -170,12 +170,12 @@ export const ChatView = () => {
 
         <PromptInput
           onSubmit={handleSubmit}
-          className='mt-4'
+          className='mt-4 bg-muted'
         >
           <PromptInputTextarea
             onChange={e => setInput(e.target.value)}
             value={input}
-            className='bg-background'
+            className='bg-muted'
             placeholder='在这里输入你的问题，按回车键发送'
           />
           <PromptInputToolbar>
