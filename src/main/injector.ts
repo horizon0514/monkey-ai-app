@@ -149,8 +149,8 @@ export class UnifyInjector {
                     }
                   }
                 });
-              } catch {}
-            }
+              }
+            } catch {}
           }
           apply();
           const mo = new MutationObserver(apply);
