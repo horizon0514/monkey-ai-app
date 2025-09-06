@@ -1,4 +1,10 @@
-import { BrowserWindow, WebContentsView, WebPreferences, shell, nativeTheme } from 'electron'
+import {
+  BrowserWindow,
+  WebContentsView,
+  WebPreferences,
+  shell,
+  nativeTheme
+} from 'electron'
 import { join } from 'path'
 import { UnifyInjector } from './injector'
 import { unifyRules } from '../shared/unifyRules'
@@ -174,16 +180,34 @@ export class SideViewManager {
           const normalized = host.replace(/^www\./, '')
           // 合并规则：通配 + 站点
           const wildcard: any = (unifyRules as any)['*'] || {}
-          const site: any = (unifyRules as any)[normalized] || (unifyRules as any)[host] || {}
-          const hide: string[] = [...(wildcard.hide || []), ...(site.hide || [])]
-          const extraCSS: string[] = [...(wildcard.extraCSS || []), ...(site.extraCSS || [])]
-          earlyCssVars = { ...(wildcard.cssVars || {}), ...(site.cssVars || {}) }
-          earlyClassTweaks = [...(wildcard.classTweaks || []), ...(site.classTweaks || [])]
-          earlyStyleTweaks = [...(wildcard.styleTweaks || []), ...(site.styleTweaks || [])]
+          const site: any =
+            (unifyRules as any)[normalized] || (unifyRules as any)[host] || {}
+          const hide: string[] = [
+            ...(wildcard.hide || []),
+            ...(site.hide || [])
+          ]
+          const extraCSS: string[] = [
+            ...(wildcard.extraCSS || []),
+            ...(site.extraCSS || [])
+          ]
+          earlyCssVars = {
+            ...(wildcard.cssVars || {}),
+            ...(site.cssVars || {})
+          }
+          earlyClassTweaks = [
+            ...(wildcard.classTweaks || []),
+            ...(site.classTweaks || [])
+          ]
+          earlyStyleTweaks = [
+            ...(wildcard.styleTweaks || []),
+            ...(site.styleTweaks || [])
+          ]
 
           // 构造隐藏规则 CSS
           if (hide.length > 0) {
-            earlyCss += hide.map(sel => `${sel}{display:none!important}`).join('\n') + '\n'
+            earlyCss +=
+              hide.map(sel => `${sel}{display:none!important}`).join('\n') +
+              '\n'
           }
           // 追加额外 CSS
           if (extraCSS.length > 0) {
@@ -198,11 +222,17 @@ export class SideViewManager {
       earlyArgs.push(`--appTheme=${initialTheme}`)
       if (earlyCss) earlyArgs.push(`--earlyCSS=${encodeURIComponent(earlyCss)}`)
       if (Object.keys(earlyCssVars).length > 0)
-        earlyArgs.push(`--cssVars=${encodeURIComponent(JSON.stringify(earlyCssVars))}`)
+        earlyArgs.push(
+          `--cssVars=${encodeURIComponent(JSON.stringify(earlyCssVars))}`
+        )
       if (earlyClassTweaks.length > 0)
-        earlyArgs.push(`--classTweaks=${encodeURIComponent(JSON.stringify(earlyClassTweaks))}`)
+        earlyArgs.push(
+          `--classTweaks=${encodeURIComponent(JSON.stringify(earlyClassTweaks))}`
+        )
       if (earlyStyleTweaks.length > 0)
-        earlyArgs.push(`--styleTweaks=${encodeURIComponent(JSON.stringify(earlyStyleTweaks))}`)
+        earlyArgs.push(
+          `--styleTweaks=${encodeURIComponent(JSON.stringify(earlyStyleTweaks))}`
+        )
       const view = new WebContentsView({
         webPreferences: {
           nodeIntegration: false,

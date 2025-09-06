@@ -79,9 +79,13 @@ try {
   const cssVarsArg = process.argv.find(a => a.startsWith('--cssVars='))
   if (cssVarsArg) {
     try {
-      const vars = JSON.parse(decodeURIComponent(cssVarsArg.slice('--cssVars='.length)))
+      const vars = JSON.parse(
+        decodeURIComponent(cssVarsArg.slice('--cssVars='.length))
+      )
       for (const [k, v] of Object.entries(vars)) {
-        try { document.documentElement.style.setProperty(k, v as string) } catch {}
+        try {
+          document.documentElement.style.setProperty(k, v as string)
+        } catch {}
       }
     } catch {}
   }
@@ -89,7 +93,9 @@ try {
   const classTweaksArg = process.argv.find(a => a.startsWith('--classTweaks='))
   if (classTweaksArg) {
     try {
-      const tweaks = JSON.parse(decodeURIComponent(classTweaksArg.slice('--classTweaks='.length)))
+      const tweaks = JSON.parse(
+        decodeURIComponent(classTweaksArg.slice('--classTweaks='.length))
+      )
       const apply = () => {
         for (const t of tweaks) {
           try {
@@ -101,26 +107,42 @@ try {
         }
       }
       apply()
-      new MutationObserver(apply).observe(document.documentElement, { childList: true, subtree: true })
+      new MutationObserver(apply).observe(document.documentElement, {
+        childList: true,
+        subtree: true
+      })
     } catch {}
   }
   // 早期 styleTweaks
   const styleTweaksArg = process.argv.find(a => a.startsWith('--styleTweaks='))
   if (styleTweaksArg) {
     try {
-      const tweaks = JSON.parse(decodeURIComponent(styleTweaksArg.slice('--styleTweaks='.length)))
+      const tweaks = JSON.parse(
+        decodeURIComponent(styleTweaksArg.slice('--styleTweaks='.length))
+      )
       const apply = () => {
         for (const t of tweaks) {
           try {
             document.querySelectorAll(t.selector).forEach(el => {
               for (const [k, v] of Object.entries(t.styles || {})) {
                 const imp = t.important ? 'important' : ''
-                if (el && (el as HTMLElement).style && typeof (el as HTMLElement).style.setProperty === 'function') {
+                if (
+                  el &&
+                  (el as HTMLElement).style &&
+                  typeof (el as HTMLElement).style.setProperty === 'function'
+                ) {
                   ;(el as HTMLElement).style.setProperty(k, v as string, imp)
-                } else if (el && typeof (el as Element).getAttribute === 'function' && typeof (el as Element).setAttribute === 'function') {
+                } else if (
+                  el &&
+                  typeof (el as Element).getAttribute === 'function' &&
+                  typeof (el as Element).setAttribute === 'function'
+                ) {
                   const prev = (el as Element).getAttribute('style') || ''
                   const decl = k + ': ' + v + (imp ? ' !important' : '') + ';'
-                  ;(el as Element).setAttribute('style', prev ? prev + ' ' + decl : decl)
+                  ;(el as Element).setAttribute(
+                    'style',
+                    prev ? prev + ' ' + decl : decl
+                  )
                 }
               }
             })
@@ -128,7 +150,10 @@ try {
         }
       }
       apply()
-      new MutationObserver(apply).observe(document.documentElement, { childList: true, subtree: true })
+      new MutationObserver(apply).observe(document.documentElement, {
+        childList: true,
+        subtree: true
+      })
     } catch {}
   }
 } catch {}

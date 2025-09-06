@@ -53,8 +53,14 @@ export class UnifyInjector {
       hide: [...(wildcard.hide || []), ...(site.hide || [])],
       cssVars: { ...(wildcard.cssVars || {}), ...(site.cssVars || {}) },
       extraCSS: [...(wildcard.extraCSS || []), ...(site.extraCSS || [])],
-      classTweaks: [...(wildcard.classTweaks || []), ...(site.classTweaks || [])],
-      styleTweaks: [...(wildcard.styleTweaks || []), ...(site.styleTweaks || [])],
+      classTweaks: [
+        ...(wildcard.classTweaks || []),
+        ...(site.classTweaks || [])
+      ],
+      styleTweaks: [
+        ...(wildcard.styleTweaks || []),
+        ...(site.styleTweaks || [])
+      ],
       flags: { ...(wildcard.flags || {}), ...(site.flags || {}) }
     }
   }
@@ -188,4 +194,3 @@ export class UnifyInjector {
     }
   }
 }
-
