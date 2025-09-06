@@ -80,7 +80,7 @@ export const ChatView = () => {
   }
 
   return (
-    <div className='relative mx-auto size-full h-[calc(100vh-48px)] max-w-4xl p-6'>
+    <div className='relative mx-auto size-full h-[calc(100vh-48px)] bg-white p-6 dark:bg-background'>
       <div className='flex h-full flex-col'>
         <Conversation className='h-full'>
           <ConversationContent>
@@ -121,7 +121,8 @@ export const ChatView = () => {
                             </MessageContent>
                           </Message>
                           {message.role === 'assistant' &&
-                            i === messages.length - 1 && (
+                            i === message.parts.length - 1 &&
+                            message.id === messages.at(-1)?.id && (
                               <Actions className='mt-2'>
                                 <Action
                                   onClick={() => regenerate()}
@@ -169,12 +170,11 @@ export const ChatView = () => {
 
         <PromptInput
           onSubmit={handleSubmit}
-          className='mt-4'
+          className='mt-4 bg-muted'
         >
           <PromptInputTextarea
             onChange={e => setInput(e.target.value)}
             value={input}
-            className='bg-background'
             placeholder='在这里输入你的问题，按回车键发送'
           />
           <PromptInputToolbar>
@@ -210,6 +210,7 @@ export const ChatView = () => {
             <PromptInputSubmit
               disabled={!input}
               status={status}
+              className='text-muted-foreground'
             />
           </PromptInputToolbar>
         </PromptInput>

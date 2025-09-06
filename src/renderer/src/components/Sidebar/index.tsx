@@ -58,7 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }
 
   return (
-    <div className='flex h-full flex-col justify-between border-r border-border/40 bg-background drag-region'>
+    <div className='flex h-full flex-col justify-between bg-muted drag-region'>
       <div className='flex flex-col py-4'>
         <div className='mb-2 px-2'>
           <p className='px-2 text-sm text-muted-foreground'>
