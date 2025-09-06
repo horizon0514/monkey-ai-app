@@ -80,7 +80,7 @@ export const ChatView = () => {
   }
 
   return (
-    <div className='relative mx-auto size-full h-[calc(100vh-48px)] bg-white p-6 dark:bg-secondary'>
+    <div className='relative mx-auto size-full h-[calc(100vh-48px)] bg-white p-6 dark:bg-background'>
       <div className='flex h-full flex-col'>
         <Conversation className='h-full'>
           <ConversationContent>

@@ -15,11 +15,11 @@ export const MainContent: React.FC<MainContentProps> = ({ selectedTab }) => {
 
   if (selectedTab === 'chat') {
     return (
-      <main className='flex-1 overflow-hidden'>
+      <main className='flex-1 overflow-hidden bg-background dark:bg-muted'>
         <ChatView />
       </main>
     )
   }
 
-  return <main className='flex-1 overflow-hidden' />
+  return <main className='flex-1 overflow-hidden bg-background dark:bg-muted' />
 }
