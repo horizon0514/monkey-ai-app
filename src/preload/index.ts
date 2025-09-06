@@ -54,6 +54,85 @@ const api = {
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise
 // just add to the DOM global.
+// 早期设置 data-theme，尽可能在文档开始阶段避免闪烁
+try {
+  const arg = process.argv.find(a => a.startsWith('--appTheme='))
+  const theme = arg ? arg.split('=')[1] : ''
+  if (theme === 'light' || theme === 'dark') {
+    try {
+      document.documentElement.setAttribute('data-theme', theme)
+    } catch {}
+  }
+  // 早期注入 CSS（隐藏/额外CSS）
+  const earlyCssArg = process.argv.find(a => a.startsWith('--earlyCSS='))
+  if (earlyCssArg) {
+    const css = decodeURIComponent(earlyCssArg.slice('--earlyCSS='.length))
+    if (css) {
+      try {
+        const style = document.createElement('style')
+        style.textContent = css
+        document.documentElement.appendChild(style)
+      } catch {}
+    }
+  }
+  // 早期注入 CSS 变量
+  const cssVarsArg = process.argv.find(a => a.startsWith('--cssVars='))
+  if (cssVarsArg) {
+    try {
+      const vars = JSON.parse(decodeURIComponent(cssVarsArg.slice('--cssVars='.length)))
+      for (const [k, v] of Object.entries(vars)) {
+        try { document.documentElement.style.setProperty(k, v as string) } catch {}
+      }
+    } catch {}
+  }
+  // 早期 classTweaks
+  const classTweaksArg = process.argv.find(a => a.startsWith('--classTweaks='))
+  if (classTweaksArg) {
+    try {
+      const tweaks = JSON.parse(decodeURIComponent(classTweaksArg.slice('--classTweaks='.length)))
+      const apply = () => {
+        for (const t of tweaks) {
+          try {
+            document.querySelectorAll(t.selector).forEach(el => {
+              if (t.remove) el.classList.remove(...t.remove)
+              if (t.add) el.classList.add(...t.add)
+            })
+          } catch {}
+        }
+      }
+      apply()
+      new MutationObserver(apply).observe(document.documentElement, { childList: true, subtree: true })
+    } catch {}
+  }
+  // 早期 styleTweaks
+  const styleTweaksArg = process.argv.find(a => a.startsWith('--styleTweaks='))
+  if (styleTweaksArg) {
+    try {
+      const tweaks = JSON.parse(decodeURIComponent(styleTweaksArg.slice('--styleTweaks='.length)))
+      const apply = () => {
+        for (const t of tweaks) {
+          try {
+            document.querySelectorAll(t.selector).forEach(el => {
+              for (const [k, v] of Object.entries(t.styles || {})) {
+                const imp = t.important ? 'important' : ''
+                if (el && (el as HTMLElement).style && typeof (el as HTMLElement).style.setProperty === 'function') {
+                  ;(el as HTMLElement).style.setProperty(k, v as string, imp)
+                } else if (el && typeof (el as Element).getAttribute === 'function' && typeof (el as Element).setAttribute === 'function') {
+                  const prev = (el as Element).getAttribute('style') || ''
+                  const decl = k + ': ' + v + (imp ? ' !important' : '') + ';'
+                  ;(el as Element).setAttribute('style', prev ? prev + ' ' + decl : decl)
+                }
+              }
+            })
+          } catch {}
+        }
+      }
+      apply()
+      new MutationObserver(apply).observe(document.documentElement, { childList: true, subtree: true })
+    } catch {}
+  }
+} catch {}
+
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', api)

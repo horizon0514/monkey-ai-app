@@ -10,7 +10,7 @@ export const defaultSites: SiteConfig[] = [
   {
     id: 'tongyi',
     title: '通义千问',
-    url: 'https://tongyi.aliyun.com/',
+    url: 'https://tongyi.com/',
     enabled: true
   },
   {

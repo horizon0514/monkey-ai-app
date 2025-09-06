@@ -1,4 +1,4 @@
-import { WebContents } from 'electron'
+import { WebContents, nativeTheme } from 'electron'
 import { DomainToUnifyRules } from '../shared/types'
 
 const BASELINE_CSS = `
@@ -28,6 +28,7 @@ export class UnifyInjector {
   attach(webContents: WebContents) {
     // 注入时机：导航完成后
     const injectAll = () => {
+      this.injectThemeAttr(webContents)
       this.injectBaselineCss(webContents)
       this.injectPerDomainTweaks(webContents)
       this.injectCleaner(webContents)
@@ -35,6 +36,13 @@ export class UnifyInjector {
 
     webContents.on('did-frame-finish-load', injectAll)
     webContents.on('did-navigate-in-page', injectAll)
+
+    // 跟随应用/系统主题变化更新 data-theme
+    const onThemeUpdated = () => this.injectThemeAttr(webContents)
+    nativeTheme.on('updated', onThemeUpdated)
+    webContents.on('destroyed', () => {
+      nativeTheme.off('updated', onThemeUpdated)
+    })
   }
 
   private getConfigForHost(host: string) {
@@ -45,6 +53,8 @@ export class UnifyInjector {
       hide: [...(wildcard.hide || []), ...(site.hide || [])],
       cssVars: { ...(wildcard.cssVars || {}), ...(site.cssVars || {}) },
       extraCSS: [...(wildcard.extraCSS || []), ...(site.extraCSS || [])],
+      classTweaks: [...(wildcard.classTweaks || []), ...(site.classTweaks || [])],
+      styleTweaks: [...(wildcard.styleTweaks || []), ...(site.styleTweaks || [])],
       flags: { ...(wildcard.flags || {}), ...(site.flags || {}) }
     }
   }
@@ -58,6 +68,16 @@ export class UnifyInjector {
         await wc.insertCSS(BASELINE_CSS)
       }
     } catch (e) {
+      // ignore
+    }
+  }
+
+  private async injectThemeAttr(wc: WebContents) {
+    try {
+      const theme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
+      const script = `(() => { try { document.documentElement.setAttribute('data-theme', '${theme}'); } catch {} })();`
+      await wc.executeJavaScript(script, true)
+    } catch {
       // ignore
     }
   }
@@ -113,12 +133,20 @@ export class UnifyInjector {
       if (cfg.styleTweaks && cfg.styleTweaks.length > 0) {
         const script = `(() => {
           const tweaks = ${JSON.stringify(cfg.styleTweaks)};
+          console.log(tweaks);
           function apply() {
             for (const t of tweaks) {
               try {
                 document.querySelectorAll(t.selector).forEach(el => {
                   for (const [k,v] of Object.entries(t.styles || {})) {
-                    (el as HTMLElement).style.setProperty(k, v, t.important ? 'important' : '');
+                    const imp = t.important ? 'important' : '';
+                    if (el && el.style && typeof el.style.setProperty === 'function') {
+                      el.style.setProperty(k, v, imp);
+                    } else if (el && typeof el.getAttribute === 'function' && typeof el.setAttribute === 'function') {
+                      const prev = el.getAttribute('style') || '';
+                      const decl = k + ': ' + v + (imp ? ' !important' : '') + ';';
+                      el.setAttribute('style', prev ? (prev + ' ' + decl) : decl);
+                    }
                   }
                 });
               } catch {}
