@@ -16,6 +16,17 @@ import { SiteConfig, LlmSettings } from '../shared/types'
 import { HonoServer } from './honoServer'
 import Store from 'electron-store'
 
+// Development-only: auto-reload main process on source changes
+if (process.env.NODE_ENV !== 'production') {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    require('electron-reloader')(module, { debug: false })
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn('electron-reloader not active:', err?.message || err)
+  }
+}
+
 // 初始化 electron-store
 Store.initRenderer()
 
