@@ -170,12 +170,11 @@ export const ChatView = () => {
 
         <PromptInput
           onSubmit={handleSubmit}
-          className='mt-4 bg-muted'
+          className='mt-4'
         >
           <PromptInputTextarea
             onChange={e => setInput(e.target.value)}
             value={input}
-            className='bg-muted'
             placeholder='在这里输入你的问题，按回车键发送'
           />
           <PromptInputToolbar>
