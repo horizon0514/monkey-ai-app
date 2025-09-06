@@ -20,7 +20,8 @@
     "postinstall": "electron-builder install-app-deps",
     "build:win": "rimraf dist && npm run build && electron-builder --win --config --publish=never",
     "build:mac": "rimraf dist && npm run build && electron-builder --mac --config --publish=never",
-    "build:linux": "rimraf dist && npm run build && electron-builder --linux --config --publish=never"
+    "build:linux": "rimraf dist && npm run build && electron-builder --linux --config --publish=never",
+    "prepare": "husky"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.23",
@@ -71,6 +72,8 @@
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.6",
     "postcss": "^8.4.33",
     "prettier": "^3.1.1",
     "prettier-plugin-tailwindcss": "^0.6.14",
@@ -81,6 +84,14 @@
     "tailwindcss": "^3.4.1",
     "typescript": "^5.9.2",
     "vite": "^5.0.11"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,css,scss,md,json,html}": [
+      "prettier --write"
+    ],
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix"
+    ]
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
