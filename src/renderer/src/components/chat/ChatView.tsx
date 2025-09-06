@@ -170,7 +170,7 @@ export const ChatView = () => {
 
         <PromptInput
           onSubmit={handleSubmit}
-          className='mt-4'
+          className='mt-4 bg-muted'
         >
           <PromptInputTextarea
             onChange={e => setInput(e.target.value)}
@@ -210,6 +210,7 @@ export const ChatView = () => {
             <PromptInputSubmit
               disabled={!input}
               status={status}
+              className='text-muted-foreground'
             />
           </PromptInputToolbar>
         </PromptInput>

@@ -754,6 +754,7 @@ export const SettingsModal: React.FC<SettingsProps> = ({
                   URL.revokeObjectURL(url)
                 }}
                 size='sm'
+                variant='outline'
               >
                 导出
               </Button>
@@ -787,12 +788,14 @@ export const SettingsModal: React.FC<SettingsProps> = ({
                   input.click()
                 }}
                 size='sm'
+                variant='outline'
               >
                 导入
               </Button>
               <Button
                 onClick={handleResetDefaults}
                 size='sm'
+                variant='outline'
               >
                 恢复默认
               </Button>
@@ -801,7 +804,6 @@ export const SettingsModal: React.FC<SettingsProps> = ({
                   onClose ? onClose() : window.electron.closeSettings()
                 }
                 size='sm'
-                variant='outline'
               >
                 关闭
               </Button>

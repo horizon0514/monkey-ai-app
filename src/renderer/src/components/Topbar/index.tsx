@@ -40,7 +40,7 @@ export const Topbar: React.FC<TopbarProps> = ({ tab, title }) => {
   }, [])
 
   return (
-    <div className='flex h-12 w-full items-center border-b border-border/40 bg-background/95 backdrop-blur drag-region supports-[backdrop-filter]:bg-background/60'>
+    <div className='flex h-12 w-full items-center border-b border-border/40 bg-muted backdrop-blur drag-region supports-[backdrop-filter]:bg-muted/60'>
       <div className='flex items-center gap-2 px-2'>
         <span className='text-sm font-medium'>{displayTitle}</span>
       </div>
