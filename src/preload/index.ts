@@ -61,7 +61,9 @@ try {
   if (theme === 'light' || theme === 'dark') {
     try {
       document.documentElement.setAttribute('data-theme', theme)
-    } catch {}
+    } catch {
+      // ignore
+    }
   }
   // 早期注入 CSS（隐藏/额外CSS）
   const earlyCssArg = process.argv.find(a => a.startsWith('--earlyCSS='))
@@ -72,7 +74,9 @@ try {
         const style = document.createElement('style')
         style.textContent = css
         document.documentElement.appendChild(style)
-      } catch {}
+      } catch {
+        // ignore
+      }
     }
   }
   // 早期注入 CSS 变量
@@ -85,9 +89,13 @@ try {
       for (const [k, v] of Object.entries(vars)) {
         try {
           document.documentElement.style.setProperty(k, v as string)
-        } catch {}
+        } catch {
+          // ignore
+        }
       }
-    } catch {}
+    } catch {
+      // ignore
+    }
   }
   // 早期 classTweaks
   const classTweaksArg = process.argv.find(a => a.startsWith('--classTweaks='))
@@ -103,7 +111,9 @@ try {
               if (t.remove) el.classList.remove(...t.remove)
               if (t.add) el.classList.add(...t.add)
             })
-          } catch {}
+          } catch {
+            // ignore
+          }
         }
       }
       apply()
@@ -111,7 +121,9 @@ try {
         childList: true,
         subtree: true
       })
-    } catch {}
+    } catch {
+      // ignore
+    }
   }
   // 早期 styleTweaks
   const styleTweaksArg = process.argv.find(a => a.startsWith('--styleTweaks='))
@@ -146,7 +158,9 @@ try {
                 }
               }
             })
-          } catch {}
+          } catch {
+            // ignore
+          }
         }
       }
       apply()
@@ -154,9 +168,13 @@ try {
         childList: true,
         subtree: true
       })
-    } catch {}
+    } catch {
+      // ignore
+    }
   }
-} catch {}
+} catch {
+  // ignore
+}
 
 if (process.contextIsolated) {
   try {
