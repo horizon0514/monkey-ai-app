@@ -325,6 +325,7 @@ function setupIpcHandlers() {
     return honoServer?.getBaseURL() || 'http://127.0.0.1:3399'
   })
 
+
   // 隐藏当前内嵌视图（用于展示内置 Chat/设置 等界面）
   ipcMain.handle('hide-current-view', () => {
     windowManager?.hideCurrentView()
