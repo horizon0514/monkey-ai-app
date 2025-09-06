@@ -1,13 +1,21 @@
-import { resolve } from 'path'
+import { resolve } from 'node:path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin()],
+    build: {
+      sourcemap: false,
+      minify: 'esbuild'
+    }
   },
   preload: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin()],
+    build: {
+      sourcemap: false,
+      minify: 'esbuild'
+    }
   },
   renderer: {
     resolve: {
@@ -17,6 +25,10 @@ export default defineConfig({
     },
     plugins: [react()],
     build: {
+      sourcemap: false,
+      target: 'es2020',
+      cssCodeSplit: true,
+      reportCompressedSize: true,
       rollupOptions: {
         input: {
           index: resolve('src/renderer/index.html'),
