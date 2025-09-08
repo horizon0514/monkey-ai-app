@@ -5,6 +5,14 @@ import { LlmSettings } from '../shared/types'
 import Store from 'electron-store'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText, streamText, convertToCoreMessages } from 'ai'
+import {
+  listConversations,
+  createConversation,
+  deleteConversation,
+  getConversationMessages,
+  upsertMessages,
+  ensureConversation
+} from './db'
 
 export class HonoServer {
   private server: unknown | null = null
@@ -31,6 +39,65 @@ export class HonoServer {
     )
 
     app.get('/health', c => c.json({ ok: true }))
+
+    // Conversations APIs
+    app.get('/conversations', c => {
+      try {
+        const rows = listConversations()
+        return c.json({ ok: true, data: rows })
+      } catch (e: any) {
+        return c.json({ ok: false, error: String(e?.message || e) }, 500)
+      }
+    })
+
+    app.post('/conversations', async c => {
+      try {
+        const body = (await c.req.json().catch(() => ({}))) as {
+          title?: string
+        }
+        const row = createConversation(body?.title)
+        return c.json({ ok: true, data: row })
+      } catch (e: any) {
+        return c.json({ ok: false, error: String(e?.message || e) }, 500)
+      }
+    })
+
+    app.delete('/conversations/:id', c => {
+      try {
+        const id = c.req.param('id')
+        deleteConversation(id)
+        return c.json({ ok: true })
+      } catch (e: any) {
+        return c.json({ ok: false, error: String(e?.message || e) }, 500)
+      }
+    })
+
+    app.get('/conversations/:id/messages', c => {
+      try {
+        const id = c.req.param('id')
+        const conv = ensureConversation(id)
+        const messages = getConversationMessages(conv.id)
+        return c.json({ ok: true, data: messages })
+      } catch (e: any) {
+        return c.json({ ok: false, error: String(e?.message || e) }, 500)
+      }
+    })
+
+    app.put('/conversations/:id/messages', async c => {
+      try {
+        const id = c.req.param('id')
+        const body = (await c.req.json().catch(() => ({}))) as {
+          messages?: Array<{ id: string; role: string; text: string }>
+        }
+        upsertMessages(
+          id,
+          Array.isArray(body.messages) ? (body.messages as any) : []
+        )
+        return c.json({ ok: true })
+      } catch (e: any) {
+        return c.json({ ok: false, error: String(e?.message || e) }, 500)
+      }
+    })
 
     app.post('/chat', async c => {
       try {

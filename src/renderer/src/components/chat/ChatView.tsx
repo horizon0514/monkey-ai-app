@@ -71,10 +71,11 @@ export const ChatView = () => {
 
   useEffect(() => {
     ;(async () => {
-      const res = await window.electron.listConversations()
-      if (res.ok) {
+      const API_BASE = 'http://127.0.0.1:3399'
+      const res = await fetch(`${API_BASE}/conversations`).then(r => r.json())
+      if (res?.ok) {
         setConversationList(
-          res.data.map(c => ({
+          res.data.map((c: any) => ({
             id: c.id,
             title: c.title,
             updatedAt: c.updatedAt
@@ -83,11 +84,11 @@ export const ChatView = () => {
         const first = res.data[0]
         if (first) {
           setConversationId(first.id)
-          const msgsRes = await window.electron.getConversationMessages(
-            first.id
-          )
-          if (msgsRes.ok) {
-            const uiMsgs: UIMessage[] = msgsRes.data.messages.map(m => ({
+          const msgsRes = await fetch(
+            `${API_BASE}/conversations/${first.id}/messages`
+          ).then(r => r.json())
+          if (msgsRes?.ok) {
+            const uiMsgs: UIMessage[] = msgsRes.data.map((m: any) => ({
               id: m.id,
               role: m.role as any,
               parts: [{ type: 'text', text: m.text }]
@@ -95,8 +96,12 @@ export const ChatView = () => {
             setMessages(uiMsgs)
           }
         } else {
-          const created = await window.electron.createConversation('New Chat')
-          if (created.ok) {
+          const created = await fetch(`${API_BASE}/conversations`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: 'New Chat' })
+          }).then(r => r.json())
+          if (created?.ok) {
             setConversationId(created.data.id)
             setConversationList([
               {
@@ -139,12 +144,22 @@ export const ChatView = () => {
           .map(p => (p as any).text)
           .join('')
       }))
-    window.electron.saveConversationMessages(conversationId, toSave)
+    const API_BASE = 'http://127.0.0.1:3399'
+    fetch(`${API_BASE}/conversations/${conversationId}/messages`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: toSave })
+    }).catch(() => {})
   }, [messages, conversationId])
 
   const handleNewChat = async () => {
-    const created = await window.electron.createConversation('New Chat')
-    if (created.ok) {
+    const API_BASE = 'http://127.0.0.1:3399'
+    const created = await fetch(`${API_BASE}/conversations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: 'New Chat' })
+    }).then(r => r.json())
+    if (created?.ok) {
       setConversationId(created.data.id)
       setConversationList(prev => [
         {
@@ -160,9 +175,12 @@ export const ChatView = () => {
 
   const handleSelectConversation = async (id: string) => {
     setConversationId(id)
-    const msgsRes = await window.electron.getConversationMessages(id)
-    if (msgsRes.ok) {
-      const uiMsgs: UIMessage[] = msgsRes.data.messages.map(m => ({
+    const API_BASE = 'http://127.0.0.1:3399'
+    const msgsRes = await fetch(
+      `${API_BASE}/conversations/${id}/messages`
+    ).then(r => r.json())
+    if (msgsRes?.ok) {
+      const uiMsgs: UIMessage[] = msgsRes.data.map((m: any) => ({
         id: m.id,
         role: m.role as any,
         parts: [{ type: 'text', text: m.text }]
