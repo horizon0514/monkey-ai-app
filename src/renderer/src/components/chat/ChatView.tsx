@@ -1,5 +1,5 @@
 'use client'
-import { Fragment } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Action } from '@renderer/components/ui/ai-elements/actions'
 import {
   Conversation,
@@ -24,7 +24,6 @@ import {
   PromptInputTools
 } from '@renderer/components/ui/ai-elements/prompt-input'
 import { Actions } from '@renderer/components/ui/ai-elements/actions'
-import { useState } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { Response } from '@renderer/components/ui/ai-elements/response'
 import { GlobeIcon, RefreshCcwIcon, CopyIcon } from 'lucide-react'
@@ -40,7 +39,10 @@ import {
   ReasoningTrigger
 } from '@renderer/components/ui/ai-elements/reasoning'
 import { Loader } from '@renderer/components/ui/ai-elements/loader'
-import { DefaultChatTransport } from 'ai'
+import { DefaultChatTransport, UIMessage } from 'ai'
+import { Button } from '@renderer/components/ui/button'
+import { ScrollArea } from '@renderer/components/ui/scroll-area'
+import { PlusIcon } from 'lucide-react'
 
 const models = [
   {
@@ -57,11 +59,57 @@ export const ChatView = () => {
   const [input, setInput] = useState('')
   const [model, setModel] = useState<string>(models[0].value)
   const [webSearch, setWebSearch] = useState(false)
-  const { messages, sendMessage, status, regenerate } = useChat({
+  const [conversationId, setConversationId] = useState<string>('')
+  const [conversationList, setConversationList] = useState<
+    Array<{ id: string; title: string; updatedAt: number }>
+  >([])
+  const { messages, sendMessage, status, regenerate, setMessages } = useChat({
     transport: new DefaultChatTransport({
       api: 'http://127.0.0.1:3399/chat/stream'
     })
   })
+
+  useEffect(() => {
+    ;(async () => {
+      const res = await window.electron.listConversations()
+      if (res.ok) {
+        setConversationList(
+          res.data.map(c => ({
+            id: c.id,
+            title: c.title,
+            updatedAt: c.updatedAt
+          }))
+        )
+        const first = res.data[0]
+        if (first) {
+          setConversationId(first.id)
+          const msgsRes = await window.electron.getConversationMessages(
+            first.id
+          )
+          if (msgsRes.ok) {
+            const uiMsgs: UIMessage[] = msgsRes.data.messages.map(m => ({
+              id: m.id,
+              role: m.role as any,
+              parts: [{ type: 'text', text: m.text }]
+            }))
+            setMessages(uiMsgs)
+          }
+        } else {
+          const created = await window.electron.createConversation('New Chat')
+          if (created.ok) {
+            setConversationId(created.data.id)
+            setConversationList([
+              {
+                id: created.data.id,
+                title: created.data.title,
+                updatedAt: created.data.updatedAt
+              }
+            ])
+          }
+        }
+      }
+    })()
+  }, [setMessages])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -79,141 +127,216 @@ export const ChatView = () => {
     }
   }
 
-  return (
-    <div className='relative mx-auto size-full h-[calc(100vh-48px)] bg-white p-6 dark:bg-background'>
-      <div className='flex h-full flex-col'>
-        <Conversation className='h-full'>
-          <ConversationContent>
-            {messages.map(message => (
-              <div key={message.id}>
-                {message.role === 'assistant' &&
-                  message.parts.filter(part => part.type === 'source-url')
-                    .length > 0 && (
-                    <Sources>
-                      <SourcesTrigger
-                        count={
-                          message.parts.filter(
-                            part => part.type === 'source-url'
-                          ).length
-                        }
-                      />
-                      {message.parts
-                        .filter(part => part.type === 'source-url')
-                        .map((part, i) => (
-                          <SourcesContent key={`${message.id}-${i}`}>
-                            <Source
-                              key={`${message.id}-${i}`}
-                              href={part.url}
-                              title={part.url}
-                            />
-                          </SourcesContent>
-                        ))}
-                    </Sources>
-                  )}
-                {message.parts.map((part, i) => {
-                  switch (part.type) {
-                    case 'text':
-                      return (
-                        <Fragment key={`${message.id}-${i}`}>
-                          <Message from={message.role}>
-                            <MessageContent>
-                              <Response>{part.text}</Response>
-                            </MessageContent>
-                          </Message>
-                          {message.role === 'assistant' &&
-                            i === message.parts.length - 1 &&
-                            message.id === messages.at(-1)?.id && (
-                              <Actions className='mt-2'>
-                                <Action
-                                  onClick={() => regenerate()}
-                                  label='Retry'
-                                >
-                                  <RefreshCcwIcon className='size-3' />
-                                </Action>
-                                <Action
-                                  onClick={() =>
-                                    navigator.clipboard.writeText(part.text)
-                                  }
-                                  label='Copy'
-                                >
-                                  <CopyIcon className='size-3' />
-                                </Action>
-                              </Actions>
-                            )}
-                        </Fragment>
-                      )
-                    case 'reasoning':
-                      return (
-                        <Reasoning
-                          key={`${message.id}-${i}`}
-                          className='w-full'
-                          isStreaming={
-                            status === 'streaming' &&
-                            i === message.parts.length - 1 &&
-                            message.id === messages.at(-1)?.id
-                          }
-                        >
-                          <ReasoningTrigger />
-                          <ReasoningContent>{part.text}</ReasoningContent>
-                        </Reasoning>
-                      )
-                    default:
-                      return null
-                  }
-                })}
-              </div>
-            ))}
-            {status === 'submitted' && <Loader />}
-          </ConversationContent>
-          <ConversationScrollButton />
-        </Conversation>
+  useEffect(() => {
+    if (!conversationId) return
+    const toSave = messages
+      .filter(m => m.parts.some(p => p.type === 'text'))
+      .map(m => ({
+        id: m.id,
+        role: m.role,
+        text: m.parts
+          .filter(p => p.type === 'text')
+          .map(p => (p as any).text)
+          .join('')
+      }))
+    window.electron.saveConversationMessages(conversationId, toSave)
+  }, [messages, conversationId])
 
-        <PromptInput
-          onSubmit={handleSubmit}
-          className='mt-4 bg-muted'
-        >
-          <PromptInputTextarea
-            onChange={e => setInput(e.target.value)}
-            value={input}
-            placeholder='在这里输入你的问题，按回车键发送'
-          />
-          <PromptInputToolbar>
-            <PromptInputTools>
-              <PromptInputButton
-                variant={webSearch ? 'default' : 'ghost'}
-                onClick={() => setWebSearch(!webSearch)}
-              >
-                <GlobeIcon size={16} />
-                <span>Search</span>
-              </PromptInputButton>
-              <PromptInputModelSelect
-                onValueChange={value => {
-                  setModel(value)
-                }}
-                value={model}
-              >
-                <PromptInputModelSelectTrigger>
-                  <PromptInputModelSelectValue />
-                </PromptInputModelSelectTrigger>
-                <PromptInputModelSelectContent>
-                  {models.map(model => (
-                    <PromptInputModelSelectItem
-                      key={model.value}
-                      value={model.value}
-                    >
-                      {model.name}
-                    </PromptInputModelSelectItem>
-                  ))}
-                </PromptInputModelSelectContent>
-              </PromptInputModelSelect>
-            </PromptInputTools>
-            <PromptInputSubmit
-              disabled={!input}
-              status={status}
-              className='text-muted-foreground'
+  const handleNewChat = async () => {
+    const created = await window.electron.createConversation('New Chat')
+    if (created.ok) {
+      setConversationId(created.data.id)
+      setConversationList(prev => [
+        {
+          id: created.data.id,
+          title: created.data.title,
+          updatedAt: created.data.updatedAt
+        },
+        ...prev
+      ])
+      setMessages([])
+    }
+  }
+
+  const handleSelectConversation = async (id: string) => {
+    setConversationId(id)
+    const msgsRes = await window.electron.getConversationMessages(id)
+    if (msgsRes.ok) {
+      const uiMsgs: UIMessage[] = msgsRes.data.messages.map(m => ({
+        id: m.id,
+        role: m.role as any,
+        parts: [{ type: 'text', text: m.text }]
+      }))
+      setMessages(uiMsgs)
+    }
+  }
+
+  return (
+    <div className='relative mx-auto size-full h-[calc(100vh-48px)] bg-white p-0 dark:bg-background'>
+      <div className='flex h-full'>
+        <div className='hidden w-64 flex-col gap-3 border-r border-border/40 p-3 md:flex'>
+          <div className='flex items-center justify-between'>
+            <div className='text-sm font-medium text-muted-foreground'>
+              会话
+            </div>
+            <Button
+              size='sm'
+              variant='outline'
+              onClick={handleNewChat}
+            >
+              <PlusIcon className='mr-1 h-4 w-4' /> 新建
+            </Button>
+          </div>
+          <ScrollArea className='flex-1'>
+            <div className='flex flex-col gap-1 pr-2'>
+              {conversationList.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => handleSelectConversation(c.id)}
+                  className={`rounded px-2 py-2 text-left text-sm transition-colors hover:bg-muted ${
+                    c.id === conversationId ? 'bg-primary/10 text-primary' : ''
+                  }`}
+                >
+                  <div className='truncate'>{c.title}</div>
+                </button>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+        <div className='flex flex-1 flex-col p-6'>
+          <Conversation className='h-full'>
+            <ConversationContent>
+              {messages.map(message => (
+                <div key={message.id}>
+                  {message.role === 'assistant' &&
+                    message.parts.filter(part => part.type === 'source-url')
+                      .length > 0 && (
+                      <Sources>
+                        <SourcesTrigger
+                          count={
+                            message.parts.filter(
+                              part => part.type === 'source-url'
+                            ).length
+                          }
+                        />
+                        {message.parts
+                          .filter(part => part.type === 'source-url')
+                          .map((part, i) => (
+                            <SourcesContent key={`${message.id}-${i}`}>
+                              <Source
+                                key={`${message.id}-${i}`}
+                                href={part.url}
+                                title={part.url}
+                              />
+                            </SourcesContent>
+                          ))}
+                      </Sources>
+                    )}
+                  {message.parts.map((part, i) => {
+                    switch (part.type) {
+                      case 'text':
+                        return (
+                          <Fragment key={`${message.id}-${i}`}>
+                            <Message from={message.role}>
+                              <MessageContent>
+                                <Response>{part.text}</Response>
+                              </MessageContent>
+                            </Message>
+                            {message.role === 'assistant' &&
+                              i === message.parts.length - 1 &&
+                              message.id === messages.at(-1)?.id && (
+                                <Actions className='mt-2'>
+                                  <Action
+                                    onClick={() => regenerate()}
+                                    label='Retry'
+                                  >
+                                    <RefreshCcwIcon className='size-3' />
+                                  </Action>
+                                  <Action
+                                    onClick={() =>
+                                      navigator.clipboard.writeText(part.text)
+                                    }
+                                    label='Copy'
+                                  >
+                                    <CopyIcon className='size-3' />
+                                  </Action>
+                                </Actions>
+                              )}
+                          </Fragment>
+                        )
+                      case 'reasoning':
+                        return (
+                          <Reasoning
+                            key={`${message.id}-${i}`}
+                            className='w-full'
+                            isStreaming={
+                              status === 'streaming' &&
+                              i === message.parts.length - 1 &&
+                              message.id === messages.at(-1)?.id
+                            }
+                          >
+                            <ReasoningTrigger />
+                            <ReasoningContent>{part.text}</ReasoningContent>
+                          </Reasoning>
+                        )
+                      default:
+                        return null
+                    }
+                  })}
+                </div>
+              ))}
+              {status === 'submitted' && <Loader />}
+            </ConversationContent>
+            <ConversationScrollButton />
+          </Conversation>
+
+          <PromptInput
+            onSubmit={handleSubmit}
+            className='mt-4 bg-muted'
+          >
+            <PromptInputTextarea
+              onChange={e => setInput(e.target.value)}
+              value={input}
+              placeholder='在这里输入你的问题，按回车键发送'
             />
-          </PromptInputToolbar>
-        </PromptInput>
+            <PromptInputToolbar>
+              <PromptInputTools>
+                <PromptInputButton
+                  variant={webSearch ? 'default' : 'ghost'}
+                  onClick={() => setWebSearch(!webSearch)}
+                >
+                  <GlobeIcon size={16} />
+                  <span>Search</span>
+                </PromptInputButton>
+                <PromptInputModelSelect
+                  onValueChange={value => {
+                    setModel(value)
+                  }}
+                  value={model}
+                >
+                  <PromptInputModelSelectTrigger>
+                    <PromptInputModelSelectValue />
+                  </PromptInputModelSelectTrigger>
+                  <PromptInputModelSelectContent>
+                    {models.map(model => (
+                      <PromptInputModelSelectItem
+                        key={model.value}
+                        value={model.value}
+                      >
+                        {model.name}
+                      </PromptInputModelSelectItem>
+                    ))}
+                  </PromptInputModelSelectContent>
+                </PromptInputModelSelect>
+              </PromptInputTools>
+              <PromptInputSubmit
+                disabled={!input}
+                status={status}
+                className='text-muted-foreground'
+              />
+            </PromptInputToolbar>
+          </PromptInput>
+        </div>
       </div>
     </div>
   )

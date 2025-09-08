@@ -27,6 +27,18 @@ const api = {
   getCurrentUrl: () => ipcRenderer.invoke('get-current-url'),
   hideCurrentView: () => ipcRenderer.invoke('hide-current-view'),
   getLocalApiBase: () => ipcRenderer.invoke('get-local-api-base'),
+  // Conversations DB APIs
+  listConversations: () => ipcRenderer.invoke('db-list-conversations'),
+  createConversation: (title?: string) =>
+    ipcRenderer.invoke('db-create-conversation', title),
+  deleteConversation: (id: string) =>
+    ipcRenderer.invoke('db-delete-conversation', id),
+  getConversationMessages: (id: string) =>
+    ipcRenderer.invoke('db-get-messages', id),
+  saveConversationMessages: (
+    id: string,
+    messages: Array<{ id: string; role: string; text: string }>
+  ) => ipcRenderer.invoke('db-save-messages', id, messages),
   // LLM settings
   getLlmSettings: () => ipcRenderer.invoke('get-llm-settings'),
   setLlmSettings: (settings: unknown) =>

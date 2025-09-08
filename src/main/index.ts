@@ -15,6 +15,15 @@ import { bootup } from './bootup'
 import { SiteConfig, LlmSettings } from '../shared/types'
 import { HonoServer } from './honoServer'
 import Store from 'electron-store'
+import {
+  initDb,
+  listConversations,
+  createConversation,
+  deleteConversation,
+  getConversationMessages,
+  upsertMessages,
+  ensureConversation
+} from './db'
 
 // 初始化 electron-store
 Store.initRenderer()
@@ -140,6 +149,13 @@ app.whenReady().then(() => {
 
   bootup()
 
+  // Initialize local SQLite database
+  try {
+    initDb()
+  } catch (e) {
+    console.error('Failed to init DB:', e)
+  }
+
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
@@ -212,7 +228,12 @@ function setupIpcHandlers() {
     'get-theme',
     'get-effective-theme',
     'set-color-theme',
-    'get-color-theme'
+    'get-color-theme',
+    'db-list-conversations',
+    'db-create-conversation',
+    'db-delete-conversation',
+    'db-get-messages',
+    'db-save-messages'
   ] as const
   const onChannels = [
     'sidebar-resize',
@@ -353,6 +374,59 @@ function setupIpcHandlers() {
   ipcMain.handle('get-color-theme', () => {
     return (store.get('ui.colorTheme') as string) || 'default'
   })
+
+  // Conversations DB
+  ipcMain.handle('db-list-conversations', () => {
+    try {
+      return { ok: true, data: listConversations() }
+    } catch (e: any) {
+      return { ok: false, error: String(e?.message || e) }
+    }
+  })
+
+  ipcMain.handle('db-create-conversation', (_evt, title?: string) => {
+    try {
+      const row = createConversation(title)
+      return { ok: true, data: row }
+    } catch (e: any) {
+      return { ok: false, error: String(e?.message || e) }
+    }
+  })
+
+  ipcMain.handle('db-delete-conversation', (_evt, id: string) => {
+    try {
+      deleteConversation(id)
+      return { ok: true }
+    } catch (e: any) {
+      return { ok: false, error: String(e?.message || e) }
+    }
+  })
+
+  ipcMain.handle('db-get-messages', (_evt, id: string) => {
+    try {
+      const conv = ensureConversation(id)
+      const msgs = getConversationMessages(conv.id)
+      return { ok: true, data: { id: conv.id, messages: msgs } }
+    } catch (e: any) {
+      return { ok: false, error: String(e?.message || e) }
+    }
+  })
+
+  ipcMain.handle(
+    'db-save-messages',
+    (
+      _evt,
+      id: string,
+      messages: Array<{ id: string; role: string; text: string }>
+    ) => {
+      try {
+        upsertMessages(id, messages as any)
+        return { ok: true }
+      } catch (e: any) {
+        return { ok: false, error: String(e?.message || e) }
+      }
+    }
+  )
 
   ipcMain.handle('fetch-openrouter-models', async () => {
     const llm = (store.get('llm') as LlmSettings) || {
