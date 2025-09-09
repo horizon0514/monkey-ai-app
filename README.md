@@ -1,8 +1,9 @@
-# Monkey AI App
+# Chat Monkey
 
 [![CI](https://github.com/horizon0514/monkey-ai-app/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/horizon0514/monkey-ai-app/actions/workflows/ci.yml)
 
 一个支持内嵌AI网页以及BYOK的AI应用
+![icon](resources/icon.png)
 
 ## 下载
 
