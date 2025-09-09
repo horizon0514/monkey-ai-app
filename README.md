@@ -1,9 +1,9 @@
-# Chat Monkey
+# <img src="resources/icon.png" alt="icon" align="left" width="64" /> Chat Monkey - AI助手
 
 [![CI](https://github.com/horizon0514/monkey-ai-app/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/horizon0514/monkey-ai-app/actions/workflows/ci.yml)
 
 一个支持内嵌AI网页以及BYOK的AI应用
-![icon](resources/icon.png)
+<img src="resources/icon.png" alt="icon" width="128" />
 
 ## 下载
 
@@ -18,8 +18,8 @@
 
 ## 截图
 
-![截图](screenshot/screenshot1.png)
-![截图](screenshot/screenshot2.png)
+<img src="screenshot/screenshot1.png" alt="截图" width="800" />
+<img src="screenshot/screenshot2.png" alt="截图" width="800" />
 
 ## Recommended IDE Setup
 
