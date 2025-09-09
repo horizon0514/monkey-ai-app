@@ -21,7 +21,8 @@
     "build:win": "rimraf dist && npm run build && electron-builder --win --config --publish=never",
     "build:mac": "rimraf dist && npm run build && electron-builder --mac --config --publish=never",
     "build:linux": "rimraf dist && npm run build && electron-builder --linux --config --publish=never",
-    "prepare": "husky"
+    "prepare": "husky",
+    "icon": "npx electron-icon-builder --input=resources/icon.png --output=build --flatten"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.23",
