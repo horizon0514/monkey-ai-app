@@ -41,9 +41,7 @@ declare global {
           }
         | { ok: false; error: string }
       >
-      createConversation: (
-        title?: string
-      ) => Promise<
+      createConversation: (title?: string) => Promise<
         | {
             ok: true
             data: {
@@ -58,9 +56,7 @@ declare global {
       deleteConversation: (
         id: string
       ) => Promise<{ ok: true } | { ok: false; error: string }>
-      getConversationMessages: (
-        id: string
-      ) => Promise<
+      getConversationMessages: (id: string) => Promise<
         | {
             ok: true
             data: {
