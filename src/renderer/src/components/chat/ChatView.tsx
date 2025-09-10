@@ -86,11 +86,13 @@ export const ChatView = () => {
             updatedAt: c.updatedAt
           }))
         )
-        const first = res.data[0]
-        if (first) {
-          setConversationId(first.id)
+        const storedId = localStorage.getItem('selectedConversationId')
+        const initial =
+          res.data.find((c: any) => c.id === storedId) || res.data[0]
+        if (initial) {
+          setConversationId(initial.id)
           const msgsRes = await fetch(
-            `${API_BASE}/conversations/${first.id}/messages`
+            `${API_BASE}/conversations/${initial.id}/messages`
           ).then(r => r.json())
           if (msgsRes?.ok) {
             const uiMsgs: UIMessage[] = msgsRes.data.map((m: any) => ({
@@ -98,11 +100,7 @@ export const ChatView = () => {
               role: m.role as any,
               parts: [{ type: 'text', text: m.text }]
             }))
-            isRestoring.current = true
             setMessages(uiMsgs)
-            setTimeout(() => {
-              isRestoring.current = false
-            }, 0)
           }
         } else {
           const created = await fetch(`${API_BASE}/conversations`, {
@@ -119,6 +117,7 @@ export const ChatView = () => {
                 updatedAt: created.data.updatedAt
               }
             ])
+            localStorage.setItem('selectedConversationId', created.data.id)
           }
         }
       }
@@ -216,6 +215,7 @@ export const ChatView = () => {
         ...prev
       ])
       setMessages([])
+      localStorage.setItem('selectedConversationId', created.data.id)
     }
   }
 
@@ -236,6 +236,7 @@ export const ChatView = () => {
       setTimeout(() => {
         isRestoring.current = false
       }, 0)
+      localStorage.setItem('selectedConversationId', id)
     }
   }
 
