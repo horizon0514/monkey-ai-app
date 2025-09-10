@@ -43,6 +43,7 @@ import { DefaultChatTransport, UIMessage } from 'ai'
 import { Button } from '@renderer/components/ui/button'
 import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import { PlusIcon } from 'lucide-react'
+import { useRef } from 'react'
 
 const models = [
   {
@@ -69,6 +70,10 @@ export const ChatView = () => {
     })
   })
 
+  const isRestoring = useRef(false)
+  const saveTimer = useRef<number | null>(null)
+  const lastSavedKeyRef = useRef<string>('')
+
   useEffect(() => {
     ;(async () => {
       const API_BASE = 'http://127.0.0.1:3399'
@@ -93,7 +98,11 @@ export const ChatView = () => {
               role: m.role as any,
               parts: [{ type: 'text', text: m.text }]
             }))
+            isRestoring.current = true
             setMessages(uiMsgs)
+            setTimeout(() => {
+              isRestoring.current = false
+            }, 0)
           }
         } else {
           const created = await fetch(`${API_BASE}/conversations`, {
@@ -134,6 +143,8 @@ export const ChatView = () => {
 
   useEffect(() => {
     if (!conversationId) return
+    if (isRestoring.current) return
+    if (status === 'streaming' || status === 'submitted') return
     const toSave = messages
       .filter(m => m.parts.some(p => p.type === 'text'))
       .map(m => ({
@@ -144,13 +155,24 @@ export const ChatView = () => {
           .map(p => (p as any).text)
           .join('')
       }))
-    const API_BASE = 'http://127.0.0.1:3399'
-    fetch(`${API_BASE}/conversations/${conversationId}/messages`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: toSave })
-    }).catch(() => {})
-  }, [messages, conversationId])
+    if (toSave.length === 0) return
+    const payloadStr = JSON.stringify(toSave)
+    const key = `${conversationId}|${payloadStr}`
+    if (lastSavedKeyRef.current === key) return
+    if (saveTimer.current) window.clearTimeout(saveTimer.current)
+    saveTimer.current = window.setTimeout(() => {
+      const API_BASE = 'http://127.0.0.1:3399'
+      fetch(`${API_BASE}/conversations/${conversationId}/messages`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: toSave })
+      })
+        .then(() => {
+          lastSavedKeyRef.current = key
+        })
+        .catch(() => {})
+    }, 500)
+  }, [messages, conversationId, status])
 
   const handleNewChat = async () => {
     const API_BASE = 'http://127.0.0.1:3399'
@@ -185,7 +207,11 @@ export const ChatView = () => {
         role: m.role as any,
         parts: [{ type: 'text', text: m.text }]
       }))
+      isRestoring.current = true
       setMessages(uiMsgs)
+      setTimeout(() => {
+        isRestoring.current = false
+      }, 0)
     }
   }
 
