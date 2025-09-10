@@ -5,6 +5,34 @@ export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs))
 }
 
+// Centralized API base resolution for renderer
+export async function getApiBase(): Promise<string> {
+  const envBase = (import.meta as any)?.env?.VITE_API_BASE as
+    | string
+    | undefined
+  if (envBase && typeof envBase === 'string' && envBase.trim()) {
+    return envBase.replace(/\/$/, '')
+  }
+  try {
+    const local = await window.electron.getLocalApiBase()
+    if (local) return String(local).replace(/\/$/, '')
+  } catch {
+    // ignore
+  }
+  return 'http://127.0.0.1:3399'
+}
+
+// Synchronous version for places that need an immediate string (e.g., SDK init)
+export function getApiBaseSync(): string {
+  const envBase = (import.meta as any)?.env?.VITE_API_BASE as
+    | string
+    | undefined
+  if (envBase && typeof envBase === 'string' && envBase.trim()) {
+    return envBase.replace(/\/$/, '')
+  }
+  return 'http://127.0.0.1:3399'
+}
+
 type DebouncedFunction<T extends (...args: unknown[]) => unknown> = ((
   ...args: Parameters<T>
 ) => void) & {
