@@ -33,7 +33,7 @@ export class HonoServer {
       '*',
       cors({
         origin: '*',
-        allowMethods: ['GET', 'POST', 'OPTIONS'],
+        allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowHeaders: ['Content-Type', 'Authorization']
       })
     )
