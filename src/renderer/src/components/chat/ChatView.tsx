@@ -352,7 +352,7 @@ export const ChatView = () => {
                           handleSelectConversation(c.id)
                         }
                       }}
-                      className={`w-full cursor-pointer rounded px-2 py-2 text-left text-sm transition-colors hover:bg-muted ${
+                      className={`group w-full cursor-pointer rounded px-2 py-2 text-left text-sm transition-colors hover:bg-muted ${
                         c.id === conversationId
                           ? 'bg-primary/10 text-primary'
                           : ''
@@ -361,7 +361,7 @@ export const ChatView = () => {
                       <div className='flex items-center justify-between gap-2'>
                         <div className='truncate'>{c.title}</div>
                         <button
-                          className='rounded p-1 text-muted-foreground opacity-70 transition-opacity hover:opacity-100 hover:bg-muted-foreground/10'
+                          className='rounded p-1 text-muted-foreground opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto hover:bg-muted-foreground/10 focus:opacity-100 focus:pointer-events-auto'
                           onClick={e => {
                             e.stopPropagation()
                             void handleDeleteConversation(c.id)
