@@ -7,9 +7,7 @@ export function cn(...inputs: ClassValue[]): string {
 
 // Centralized API base resolution for renderer
 export async function getApiBase(): Promise<string> {
-  const envBase = (import.meta as any)?.env?.VITE_API_BASE as
-    | string
-    | undefined
+  const envBase = (import.meta as any)?.env?.VITE_API_BASE as string | undefined
   if (envBase && typeof envBase === 'string' && envBase.trim()) {
     return envBase.replace(/\/$/, '')
   }
@@ -24,9 +22,7 @@ export async function getApiBase(): Promise<string> {
 
 // Synchronous version for places that need an immediate string (e.g., SDK init)
 export function getApiBaseSync(): string {
-  const envBase = (import.meta as any)?.env?.VITE_API_BASE as
-    | string
-    | undefined
+  const envBase = (import.meta as any)?.env?.VITE_API_BASE as string | undefined
   if (envBase && typeof envBase === 'string' && envBase.trim()) {
     return envBase.replace(/\/$/, '')
   }
