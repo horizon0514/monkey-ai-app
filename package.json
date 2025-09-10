@@ -52,6 +52,7 @@
     "electron-store": "8.1.0",
     "electron-updater": "^6.1.7",
     "embla-carousel-react": "^8.6.0",
+    "gsap": "^3.13.0",
     "hono": "^4.9.6",
     "lucide-react": "^0.542.0",
     "ogl": "^1.0.11",
