@@ -75,7 +75,7 @@ export const ChatView = () => {
   const prevStatusRef = useRef<string | undefined>(undefined)
 
   // Grouping helpers
-  const getGroupLabel = (timestamp: number): '本天' | '本周' | '本月' | '更早' => {
+  const getGroupLabel = (timestamp: number): '今天' | '本周' | '本月' | '更早' => {
     const now = new Date()
     const startOfDay = new Date(
       now.getFullYear(),
@@ -85,7 +85,7 @@ export const ChatView = () => {
     const dayOfWeekMondayBased = (now.getDay() + 6) % 7 // Monday = 0
     const startOfWeek = startOfDay - dayOfWeekMondayBased * 24 * 60 * 60 * 1000
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
-    if (timestamp >= startOfDay) return '本天'
+    if (timestamp >= startOfDay) return '今天'
     if (timestamp >= startOfWeek) return '本周'
     if (timestamp >= startOfMonth) return '本月'
     return '更早'
@@ -102,8 +102,8 @@ export const ChatView = () => {
         if (!buckets[label]) buckets[label] = []
         buckets[label].push(c)
       })
-      const order: Array<'本天' | '本周' | '本月' | '更早'> = [
-        '本天',
+      const order: Array<'今天' | '本周' | '本月' | '更早'> = [
+        '今天',
         '本周',
         '本月',
         '更早'
