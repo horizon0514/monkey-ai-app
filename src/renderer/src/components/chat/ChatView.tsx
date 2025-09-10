@@ -45,6 +45,8 @@ import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import { PlusIcon } from 'lucide-react'
 import { useMemo, useRef } from 'react'
 import { getApiBase, getApiBaseSync } from '@renderer/lib/utils'
+import Orb from '@renderer/components/ui/orb'
+import { cn } from '@renderer/lib/utils'
 
 const models = [
   {
@@ -76,7 +78,9 @@ export const ChatView = () => {
   const prevStatusRef = useRef<string | undefined>(undefined)
 
   // Grouping helpers
-  const getGroupLabel = (timestamp: number): '今天' | '本周' | '本月' | '更早' => {
+  const getGroupLabel = (
+    timestamp: number
+  ): '今天' | '本周' | '本月' | '更早' => {
     const now = new Date()
     const startOfDay = new Date(
       now.getFullYear(),
@@ -85,36 +89,40 @@ export const ChatView = () => {
     ).getTime()
     const dayOfWeekMondayBased = (now.getDay() + 6) % 7 // Monday = 0
     const startOfWeek = startOfDay - dayOfWeekMondayBased * 24 * 60 * 60 * 1000
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
+    const startOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      1
+    ).getTime()
     if (timestamp >= startOfDay) return '今天'
     if (timestamp >= startOfWeek) return '本周'
     if (timestamp >= startOfMonth) return '本月'
     return '更早'
   }
 
-  const groupedConversations = useMemo(
-    () => {
-      const sorted = [...conversationList].sort(
-        (a, b) => b.updatedAt - a.updatedAt
-      )
-      const buckets: Record<string, Array<{ id: string; title: string; updatedAt: number }>> = {}
-      sorted.forEach(c => {
-        const label = getGroupLabel(c.updatedAt)
-        if (!buckets[label]) buckets[label] = []
-        buckets[label].push(c)
-      })
-      const order: Array<'今天' | '本周' | '本月' | '更早'> = [
-        '今天',
-        '本周',
-        '本月',
-        '更早'
-      ]
-      return order
-        .map(label => ({ label, items: buckets[label] || [] }))
-        .filter(group => group.items.length > 0)
-    },
-    [conversationList]
-  )
+  const groupedConversations = useMemo(() => {
+    const sorted = [...conversationList].sort(
+      (a, b) => b.updatedAt - a.updatedAt
+    )
+    const buckets: Record<
+      string,
+      Array<{ id: string; title: string; updatedAt: number }>
+    > = {}
+    sorted.forEach(c => {
+      const label = getGroupLabel(c.updatedAt)
+      if (!buckets[label]) buckets[label] = []
+      buckets[label].push(c)
+    })
+    const order: Array<'今天' | '本周' | '本月' | '更早'> = [
+      '今天',
+      '本周',
+      '本月',
+      '更早'
+    ]
+    return order
+      .map(label => ({ label, items: buckets[label] || [] }))
+      .filter(group => group.items.length > 0)
+  }, [conversationList])
 
   useEffect(() => {
     ;(async () => {
@@ -219,25 +227,25 @@ export const ChatView = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: toSave })
       })
-      .then(() => {
-        lastSavedKeyRef.current = key
-        // bump current conversation to top locally to reflect updated_at ordering
-        const nowTs = Date.now()
-        setConversationList(prev => {
-          const current = prev.find(c => c.id === conversationId)
-          const rest = prev.filter(c => c.id !== conversationId)
-          const updated = {
-            id: conversationId,
-            title: current?.title || 'New Chat',
-            updatedAt: nowTs
-          }
-          return [updated, ...rest]
+        .then(() => {
+          lastSavedKeyRef.current = key
+          // bump current conversation to top locally to reflect updated_at ordering
+          const nowTs = Date.now()
+          setConversationList(prev => {
+            const current = prev.find(c => c.id === conversationId)
+            const rest = prev.filter(c => c.id !== conversationId)
+            const updated = {
+              id: conversationId,
+              title: current?.title || 'New Chat',
+              updatedAt: nowTs
+            }
+            return [updated, ...rest]
+          })
         })
-      })
-      .catch(() => {})
-      .finally(() => {
-        prevStatusRef.current = status
-      })
+        .catch(() => {})
+        .finally(() => {
+          prevStatusRef.current = status
+        })
     })()
   }, [messages, conversationId, status])
 
@@ -267,7 +275,9 @@ export const ChatView = () => {
     const API_BASE = await getApiBase()
     try {
       await fetch(`${API_BASE}/conversations/${id}`, { method: 'DELETE' })
-    } catch {}
+    } catch (e) {
+      console.error(e)
+    }
     const wasCurrent = conversationId === id
     setConversationList(prev => {
       const nextList = prev.filter(c => c.id !== id)
@@ -339,7 +349,10 @@ export const ChatView = () => {
           <ScrollArea className='flex-1'>
             <div className='flex flex-col gap-1 pr-2'>
               {groupedConversations.map(group => (
-                <div key={group.label} className='mt-2 first:mt-0'>
+                <div
+                  key={group.label}
+                  className='mt-2 first:mt-0'
+                >
                   <div className='px-2 py-1 text-xs text-muted-foreground'>
                     {group.label}
                   </div>
@@ -364,7 +377,7 @@ export const ChatView = () => {
                       <div className='flex items-center justify-between gap-2'>
                         <div className='truncate'>{c.title}</div>
                         <button
-                          className='rounded p-1 text-muted-foreground opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto hover:bg-muted-foreground/10 focus:opacity-100 focus:pointer-events-auto'
+                          className='pointer-events-none rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted-foreground/10 focus:pointer-events-auto focus:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100'
                           onClick={e => {
                             e.stopPropagation()
                             void handleDeleteConversation(c.id)
@@ -383,8 +396,28 @@ export const ChatView = () => {
           </ScrollArea>
         </div>
         <div className='flex flex-1 flex-col p-6'>
-          <Conversation className='h-full'>
+          <Conversation
+            className={cn({
+              'h-full flex-1': messages.length !== 0
+            })}
+          >
             <ConversationContent>
+              {messages.length === 0 && (
+                <div
+                  style={{
+                    width: '100%',
+                    height: '200px',
+                    position: 'relative'
+                  }}
+                >
+                  <Orb
+                    hoverIntensity={0.0}
+                    rotateOnHover={true}
+                    hue={0}
+                    forceHoverState={false}
+                  />
+                </div>
+              )}
               {messages.map(message => (
                 <div key={message.id}>
                   {message.role === 'assistant' &&
