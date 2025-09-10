@@ -47,6 +47,7 @@ import { useMemo, useRef } from 'react'
 import { getApiBase, getApiBaseSync } from '@renderer/lib/utils'
 import Orb from '@renderer/components/ui/orb'
 import { cn } from '@renderer/lib/utils'
+import TextType from '@renderer/components/ui/text-type'
 
 const models = [
   {
@@ -76,6 +77,7 @@ export const ChatView = () => {
   const isRestoring = useRef(false)
   const lastSavedKeyRef = useRef<string>('')
   const prevStatusRef = useRef<string | undefined>(undefined)
+  const didInitialScrollRef = useRef(false)
 
   // Grouping helpers
   const getGroupLabel = (
@@ -173,6 +175,23 @@ export const ChatView = () => {
       }
     })()
   }, [setMessages])
+
+  // Reset initial scroll flag when switching conversations
+  useEffect(() => {
+    didInitialScrollRef.current = false
+  }, [conversationId])
+
+  // Ensure the conversation view starts at the bottom on load/restore without animation
+  useEffect(() => {
+    if (didInitialScrollRef.current) return
+    const container = document.querySelector(
+      '[role="log"]'
+    ) as HTMLElement | null
+    if (container) {
+      container.scrollTop = container.scrollHeight
+      didInitialScrollRef.current = true
+    }
+  }, [messages, conversationId])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -416,6 +435,15 @@ export const ChatView = () => {
                     hue={0}
                     forceHoverState={false}
                   />
+                  <TextType
+                    className='text-md w-full text-center text-gray-500'
+                    text={['你好，有什么我可以帮助你的吗？', '试着给我提问吧']}
+                    typingSpeed={125}
+                    pauseDuration={1500}
+                    deletingSpeed={55}
+                    showCursor={false}
+                    cursorCharacter='|'
+                  />
                 </div>
               )}
               {messages.map(message => (
@@ -504,7 +532,7 @@ export const ChatView = () => {
 
           <PromptInput
             onSubmit={handleSubmit}
-            className='mt-4 bg-muted'
+            className='mt-4 bg-background drop-shadow-sm dark:bg-muted'
           >
             <PromptInputTextarea
               onChange={e => setInput(e.target.value)}
