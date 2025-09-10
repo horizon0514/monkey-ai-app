@@ -74,7 +74,7 @@ export class UnifyInjector {
         await wc.insertCSS(BASELINE_CSS)
       }
     } catch (e) {
-      // ignore
+      console.error(e)
     }
   }
 
@@ -83,8 +83,8 @@ export class UnifyInjector {
       const theme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
       const script = `(() => { try { document.documentElement.setAttribute('data-theme', '${theme}'); } catch {} })();`
       await wc.executeJavaScript(script, true)
-    } catch {
-      // ignore
+    } catch (e) {
+      console.error(e)
     }
   }
 
@@ -118,7 +118,9 @@ export class UnifyInjector {
                 if (t.remove) el.classList.remove(...t.remove);
                 if (t.add) el.classList.add(...t.add);
               });
-            } catch {}
+            } catch(e) {
+              console.error(e);
+            }
           }
           const mo = new MutationObserver(() => {
             for (const t of tweaks) {
@@ -127,7 +129,9 @@ export class UnifyInjector {
                   if (t.remove) el.classList.remove(...t.remove);
                   if (t.add) el.classList.add(...t.add);
                 });
-              } catch {}
+              } catch(e) {
+                console.error(e);
+              }
             }
           });
           mo.observe(document.documentElement, { childList: true, subtree: true });
@@ -139,7 +143,6 @@ export class UnifyInjector {
       if (cfg.styleTweaks && cfg.styleTweaks.length > 0) {
         const script = `(() => {
           const tweaks = ${JSON.stringify(cfg.styleTweaks)};
-          console.log(tweaks);
           function apply() {
             for (const t of tweaks) {
               try {
@@ -155,17 +158,20 @@ export class UnifyInjector {
                     }
                   }
                 });
+              } catch(e) {
+                console.error(e);
               }
-            } catch {}
+            }
           }
           apply();
           const mo = new MutationObserver(apply);
           mo.observe(document.documentElement, { childList: true, subtree: true });
+          console.log('style tweaks injected');
         })();`
         await wc.executeJavaScript(script, true)
       }
-    } catch {
-      // ignore
+    } catch (e) {
+      console.error('style tweaks inject error', e)
     }
   }
 
@@ -181,7 +187,9 @@ export class UnifyInjector {
           for (const sel of selectors) {
             try {
               document.querySelectorAll(sel).forEach(el => el && el.style && el.style.setProperty('display','none','important'));
-            } catch {}
+            } catch(e) {
+              console.error(e);
+            }
           }
         }
         hideOnce();
@@ -189,8 +197,8 @@ export class UnifyInjector {
         mo.observe(document.documentElement, { childList: true, subtree: true });
       })();`
       await wc.executeJavaScript(script, true)
-    } catch {
-      // ignore
+    } catch (e) {
+      console.error(e)
     }
   }
 }
