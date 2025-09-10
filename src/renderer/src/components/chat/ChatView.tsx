@@ -26,7 +26,7 @@ import {
 import { Actions } from '@renderer/components/ui/ai-elements/actions'
 import { useChat } from '@ai-sdk/react'
 import { Response } from '@renderer/components/ui/ai-elements/response'
-import { GlobeIcon, RefreshCcwIcon, CopyIcon } from 'lucide-react'
+import { GlobeIcon, RefreshCcwIcon, CopyIcon, Trash2Icon } from 'lucide-react'
 import {
   Source,
   Sources,
@@ -43,7 +43,7 @@ import { DefaultChatTransport, UIMessage } from 'ai'
 import { Button } from '@renderer/components/ui/button'
 import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import { PlusIcon } from 'lucide-react'
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 
 const models = [
   {
@@ -73,6 +73,47 @@ export const ChatView = () => {
   const isRestoring = useRef(false)
   const lastSavedKeyRef = useRef<string>('')
   const prevStatusRef = useRef<string | undefined>(undefined)
+
+  // Grouping helpers
+  const getGroupLabel = (timestamp: number): '本天' | '本周' | '本月' | '更早' => {
+    const now = new Date()
+    const startOfDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    ).getTime()
+    const dayOfWeekMondayBased = (now.getDay() + 6) % 7 // Monday = 0
+    const startOfWeek = startOfDay - dayOfWeekMondayBased * 24 * 60 * 60 * 1000
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
+    if (timestamp >= startOfDay) return '本天'
+    if (timestamp >= startOfWeek) return '本周'
+    if (timestamp >= startOfMonth) return '本月'
+    return '更早'
+  }
+
+  const groupedConversations = useMemo(
+    () => {
+      const sorted = [...conversationList].sort(
+        (a, b) => b.updatedAt - a.updatedAt
+      )
+      const buckets: Record<string, Array<{ id: string; title: string; updatedAt: number }>> = {}
+      sorted.forEach(c => {
+        const label = getGroupLabel(c.updatedAt)
+        if (!buckets[label]) buckets[label] = []
+        buckets[label].push(c)
+      })
+      const order: Array<'本天' | '本周' | '本月' | '更早'> = [
+        '本天',
+        '本周',
+        '本月',
+        '更早'
+      ]
+      return order
+        .map(label => ({ label, items: buckets[label] || [] }))
+        .filter(group => group.items.length > 0)
+    },
+    [conversationList]
+  )
 
   useEffect(() => {
     ;(async () => {
@@ -219,6 +260,42 @@ export const ChatView = () => {
     }
   }
 
+  const handleDeleteConversation = async (id: string) => {
+    const API_BASE = 'http://127.0.0.1:3399'
+    try {
+      await fetch(`${API_BASE}/conversations/${id}`, { method: 'DELETE' })
+    } catch {}
+    const wasCurrent = conversationId === id
+    setConversationList(prev => {
+      const nextList = prev.filter(c => c.id !== id)
+      if (wasCurrent) {
+        if (nextList.length > 0) {
+          const nextId = nextList[0].id
+          setConversationId(nextId)
+          localStorage.setItem('selectedConversationId', nextId)
+          // load messages for the next conversation
+          ;(async () => {
+            const msgsRes = await fetch(
+              `${API_BASE}/conversations/${nextId}/messages`
+            ).then(r => r.json())
+            if (msgsRes?.ok) {
+              const uiMsgs: UIMessage[] = msgsRes.data.map((m: any) => ({
+                id: m.id,
+                role: m.role as any,
+                parts: [{ type: 'text', text: m.text }]
+              }))
+              setMessages(uiMsgs)
+            }
+          })()
+        } else {
+          // no conversations left; create a new one
+          void handleNewChat()
+        }
+      }
+      return nextList
+    })
+  }
+
   const handleSelectConversation = async (id: string) => {
     setConversationId(id)
     const API_BASE = 'http://127.0.0.1:3399'
@@ -258,16 +335,46 @@ export const ChatView = () => {
           </div>
           <ScrollArea className='flex-1'>
             <div className='flex flex-col gap-1 pr-2'>
-              {conversationList.map(c => (
-                <button
-                  key={c.id}
-                  onClick={() => handleSelectConversation(c.id)}
-                  className={`rounded px-2 py-2 text-left text-sm transition-colors hover:bg-muted ${
-                    c.id === conversationId ? 'bg-primary/10 text-primary' : ''
-                  }`}
-                >
-                  <div className='truncate'>{c.title}</div>
-                </button>
+              {groupedConversations.map(group => (
+                <div key={group.label} className='mt-2 first:mt-0'>
+                  <div className='px-2 py-1 text-xs text-muted-foreground'>
+                    {group.label}
+                  </div>
+                  {group.items.map(c => (
+                    <div
+                      key={c.id}
+                      role='button'
+                      tabIndex={0}
+                      onClick={() => handleSelectConversation(c.id)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          handleSelectConversation(c.id)
+                        }
+                      }}
+                      className={`w-full cursor-pointer rounded px-2 py-2 text-left text-sm transition-colors hover:bg-muted ${
+                        c.id === conversationId
+                          ? 'bg-primary/10 text-primary'
+                          : ''
+                      }`}
+                    >
+                      <div className='flex items-center justify-between gap-2'>
+                        <div className='truncate'>{c.title}</div>
+                        <button
+                          className='rounded p-1 text-muted-foreground opacity-70 transition-opacity hover:opacity-100 hover:bg-muted-foreground/10'
+                          onClick={e => {
+                            e.stopPropagation()
+                            void handleDeleteConversation(c.id)
+                          }}
+                          aria-label='删除会话'
+                          title='删除会话'
+                        >
+                          <Trash2Icon className='h-4 w-4' />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ))}
             </div>
           </ScrollArea>
