@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { eq, sql } from 'drizzle-orm'
 import { randomUUID } from 'crypto'
 import { app } from 'electron'
+import { mkdirSync } from 'fs'
 import { join } from 'path'
 import {
   conversations,
@@ -24,6 +25,18 @@ let sqlite: Database | null = null
 let db: ReturnType<typeof drizzle> | null = null
 
 export function getDbPath(): string {
+  // In development, store DB under project directory for easier inspection
+  if (!app.isPackaged) {
+    const base = app.getAppPath()
+    const dir = join(base, 'dev-db')
+    try {
+      mkdirSync(dir, { recursive: true })
+    } catch {
+      // ignore
+    }
+    return join(dir, 'chat.sqlite3')
+  }
+  // In production, use userData directory
   const userData = app.getPath('userData')
   return join(userData, 'chat.sqlite3')
 }
