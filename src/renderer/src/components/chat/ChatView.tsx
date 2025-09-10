@@ -44,6 +44,7 @@ import { Button } from '@renderer/components/ui/button'
 import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import { PlusIcon } from 'lucide-react'
 import { useMemo, useRef } from 'react'
+import { getApiBase, getApiBaseSync } from '@renderer/lib/utils'
 
 const models = [
   {
@@ -66,7 +67,7 @@ export const ChatView = () => {
   >([])
   const { messages, sendMessage, status, regenerate, setMessages } = useChat({
     transport: new DefaultChatTransport({
-      api: 'http://127.0.0.1:3399/chat/stream'
+      api: `${getApiBaseSync()}/chat/stream`
     })
   })
 
@@ -117,7 +118,7 @@ export const ChatView = () => {
 
   useEffect(() => {
     ;(async () => {
-      const API_BASE = 'http://127.0.0.1:3399'
+      const API_BASE = await getApiBase()
       const res = await fetch(`${API_BASE}/conversations`).then(r => r.json())
       if (res?.ok) {
         setConversationList(
@@ -211,12 +212,13 @@ export const ChatView = () => {
       prevStatusRef.current = status
       return
     }
-    const API_BASE = 'http://127.0.0.1:3399'
-    fetch(`${API_BASE}/conversations/${conversationId}/messages`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: toSave })
-    })
+    ;(async () => {
+      const API_BASE = await getApiBase()
+      fetch(`${API_BASE}/conversations/${conversationId}/messages`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: toSave })
+      })
       .then(() => {
         lastSavedKeyRef.current = key
         // bump current conversation to top locally to reflect updated_at ordering
@@ -236,10 +238,11 @@ export const ChatView = () => {
       .finally(() => {
         prevStatusRef.current = status
       })
+    })()
   }, [messages, conversationId, status])
 
   const handleNewChat = async () => {
-    const API_BASE = 'http://127.0.0.1:3399'
+    const API_BASE = await getApiBase()
     const created = await fetch(`${API_BASE}/conversations`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -261,7 +264,7 @@ export const ChatView = () => {
   }
 
   const handleDeleteConversation = async (id: string) => {
-    const API_BASE = 'http://127.0.0.1:3399'
+    const API_BASE = await getApiBase()
     try {
       await fetch(`${API_BASE}/conversations/${id}`, { method: 'DELETE' })
     } catch {}
@@ -298,7 +301,7 @@ export const ChatView = () => {
 
   const handleSelectConversation = async (id: string) => {
     setConversationId(id)
-    const API_BASE = 'http://127.0.0.1:3399'
+    const API_BASE = await getApiBase()
     const msgsRes = await fetch(
       `${API_BASE}/conversations/${id}/messages`
     ).then(r => r.json())
