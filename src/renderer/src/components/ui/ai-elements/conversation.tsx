@@ -13,7 +13,7 @@ export const Conversation = ({ className, ...props }: ConversationProps) => (
   <StickToBottom
     className={cn('relative flex-1 overflow-y-auto', className)}
     initial='auto'
-    resize='smooth'
+    resize='auto'
     role='log'
     {...props}
   />
@@ -41,9 +41,20 @@ export const ConversationScrollButton = ({
 }: ConversationScrollButtonProps) => {
   const { isAtBottom, scrollToBottom } = useStickToBottomContext()
 
-  const handleScrollToBottom = useCallback(() => {
-    scrollToBottom()
-  }, [scrollToBottom])
+  const handleScrollToBottom = useCallback(
+    (e?: React.MouseEvent<HTMLButtonElement>) => {
+      const container = (e?.currentTarget as HTMLElement | null)?.closest(
+        '[role="log"]'
+      ) as HTMLElement | null
+      if (container) {
+        container.scrollTop = container.scrollHeight
+      } else {
+        // Fallback to library method if container not found
+        scrollToBottom()
+      }
+    },
+    [scrollToBottom]
+  )
 
   return (
     !isAtBottom && (
