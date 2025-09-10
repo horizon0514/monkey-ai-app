@@ -13,19 +13,24 @@
     height: 10px;
   }
   *::-webkit-scrollbar-track {
-    background-color: hsl(var(--muted));
+    background-color: transparent;
   }
   *::-webkit-scrollbar-thumb {
-    background-color: hsl(var(--border));
+    background-color: hsl(var(--foreground) / 0.28);
     border-radius: 8px;
-    border: 2px solid hsl(var(--muted));
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    min-height: 36px;
   }
   *::-webkit-scrollbar-thumb:hover {
-    background-color: hsl(var(--foreground) / 0.25);
+    background-color: hsl(var(--foreground) / 0.45);
+  }
+  *::-webkit-scrollbar-thumb:active {
+    background-color: hsl(var(--foreground) / 0.6);
   }
   /* Firefox */
   * {
-    scrollbar-color: hsl(var(--border)) hsl(var(--muted));
+    scrollbar-color: hsl(var(--foreground) / 0.45) transparent;
     scrollbar-width: thin;
   }
 }
