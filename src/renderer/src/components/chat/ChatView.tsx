@@ -71,8 +71,8 @@ export const ChatView = () => {
   })
 
   const isRestoring = useRef(false)
-  const saveTimer = useRef<number | null>(null)
   const lastSavedKeyRef = useRef<string>('')
+  const prevStatusRef = useRef<string | undefined>(undefined)
 
   useEffect(() => {
     ;(async () => {
@@ -144,7 +144,14 @@ export const ChatView = () => {
   useEffect(() => {
     if (!conversationId) return
     if (isRestoring.current) return
-    if (status === 'streaming' || status === 'submitted') return
+    const prev = prevStatusRef.current
+    const finishedNow =
+      prev === 'streaming' && status !== 'streaming' && status !== 'submitted'
+    const erroredNow = status === 'error' || false
+    if (!(finishedNow || erroredNow)) {
+      prevStatusRef.current = status
+      return
+    }
     const toSave = messages
       .filter(m => m.parts.some(p => p.type === 'text'))
       .map(m => ({
@@ -155,23 +162,28 @@ export const ChatView = () => {
           .map(p => (p as any).text)
           .join('')
       }))
-    if (toSave.length === 0) return
-    const payloadStr = JSON.stringify(toSave)
-    const key = `${conversationId}|${payloadStr}`
-    if (lastSavedKeyRef.current === key) return
-    if (saveTimer.current) window.clearTimeout(saveTimer.current)
-    saveTimer.current = window.setTimeout(() => {
-      const API_BASE = 'http://127.0.0.1:3399'
-      fetch(`${API_BASE}/conversations/${conversationId}/messages`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: toSave })
+    if (toSave.length === 0) {
+      prevStatusRef.current = status
+      return
+    }
+    const key = `${conversationId}|${JSON.stringify(toSave)}`
+    if (lastSavedKeyRef.current === key) {
+      prevStatusRef.current = status
+      return
+    }
+    const API_BASE = 'http://127.0.0.1:3399'
+    fetch(`${API_BASE}/conversations/${conversationId}/messages`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: toSave })
+    })
+      .then(() => {
+        lastSavedKeyRef.current = key
       })
-        .then(() => {
-          lastSavedKeyRef.current = key
-        })
-        .catch(() => {})
-    }, 500)
+      .catch(() => {})
+      .finally(() => {
+        prevStatusRef.current = status
+      })
   }, [messages, conversationId, status])
 
   const handleNewChat = async () => {
