@@ -1,7 +1,7 @@
 import { Database } from 'better-sqlite3'
 import BetterSqlite3 from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { eq, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { randomUUID } from 'crypto'
 import { app } from 'electron'
 import { mkdirSync } from 'fs'
@@ -83,11 +83,7 @@ export function createConversation(title?: string): ConversationRow {
 
 export function listConversations(): ConversationRow[] {
   if (!db) throw new Error('DB_NOT_INITIALIZED')
-  return db
-    .select()
-    .from(conversations)
-    .orderBy(sql`updated_at DESC`)
-    .all()
+  return db.select().from(conversations).orderBy(conversations.createdAt).all()
 }
 
 export function deleteConversation(conversationId: string): void {
@@ -114,10 +110,6 @@ export function upsertMessages(
     msgs.forEach((m, i) => {
       stmt.run(m.id || randomUUID(), conversationId, m.role, m.text, i, now)
     })
-    // update conversation.updated_at
-    sqlite!
-      .prepare('UPDATE conversations SET updated_at = ? WHERE id = ?')
-      .run(now, conversationId)
   })
   tx(uiMessages)
 }
