@@ -179,6 +179,18 @@ export const ChatView = () => {
     })
       .then(() => {
         lastSavedKeyRef.current = key
+        // bump current conversation to top locally to reflect updated_at ordering
+        const nowTs = Date.now()
+        setConversationList(prev => {
+          const current = prev.find(c => c.id === conversationId)
+          const rest = prev.filter(c => c.id !== conversationId)
+          const updated = {
+            id: conversationId,
+            title: current?.title || 'New Chat',
+            updatedAt: nowTs
+          }
+          return [updated, ...rest]
+        })
       })
       .catch(() => {})
       .finally(() => {
