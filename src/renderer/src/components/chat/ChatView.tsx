@@ -196,12 +196,12 @@ export const ChatView = () => {
     if (created?.ok) {
       setConversationId(created.data.id)
       setConversationList(prev => [
-        ...prev,
         {
           id: created.data.id,
           title: created.data.title,
           updatedAt: created.data.updatedAt
-        }
+        },
+        ...prev
       ])
       setMessages([])
     }
