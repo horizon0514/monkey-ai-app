@@ -17,6 +17,7 @@ export default defineConfig({
     },
     plugins: [react()],
     build: {
+      sourcemap: false,
       rollupOptions: {
         input: {
           index: resolve('src/renderer/index.html'),
