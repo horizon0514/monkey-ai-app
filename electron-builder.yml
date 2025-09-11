@@ -9,8 +9,17 @@ files:
   - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - '!**/*.map'
+  - '!**/*.log'
+  - '!**/__tests__/**'
+  - '!**/test/**'
+  - '!**/tests/**'
+  - '!**/drizzle/**'
+  - '!**/screenshot/**'
+  - '!**/build/icons/**'
+  - '!**/resources/**'
 asarUnpack:
-  - resources/**
+  - '**/*.node'
 win:
   executableName: ChatMonkey
   target:
@@ -61,3 +70,11 @@ publish:
 asar: true
 compression: maximum
 removePackageScripts: true
+electronLanguages:
+  - en-US
+  - zh-CN
+extraResources:
+  - from: build/icons
+    to: resources/icons
+    filter:
+      - '*.png'

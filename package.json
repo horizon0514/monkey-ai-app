@@ -23,6 +23,11 @@
     "build:win": "rimraf dist && npm run build && electron-builder --win --config --publish=never",
     "build:mac": "rimraf dist && npm run build && electron-builder --mac --config --publish=never",
     "build:linux": "rimraf dist && npm run build && electron-builder --linux --config --publish=never",
+    "build:win:x64": "rimraf dist && npm run build && electron-builder --win nsis --x64 --publish=never",
+    "build:mac:arm64": "rimraf dist && npm run build && electron-builder --mac dmg --arm64 --publish=never",
+    "build:mac:x64": "rimraf dist && npm run build && electron-builder --mac dmg --x64 --publish=never",
+    "build:linux:appimage": "rimraf dist && npm run build && electron-builder --linux AppImage --x64 --publish=never",
+    "build:linux:deb": "rimraf dist && npm run build && electron-builder --linux deb --x64 --publish=never",
     "prepare": "husky",
     "icon": "npx electron-icon-builder --input=resources/icon.png --output=build --flatten"
   },
