@@ -1,13 +1,29 @@
-name: Build Electron App
+name: Build and Release Electron App
 
 on:
   push:
     branches: [ main ]
+    tags:
+      - v*.*.*
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag to release (e.g., v1.0.2). Leave empty to not release.'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
-    name: ${{ matrix.os }}
+    name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -15,10 +31,13 @@ jobs:
         include:
           - os: ubuntu-latest
             build: npm run build:linux:appimage
+            artifact: linux-artifacts
           - os: windows-latest
             build: npm run build:win:x64
+            artifact: windows-artifacts
           - os: macos-latest
             build: npm run build:mac:arm64
+            artifact: macos-artifacts
 
     steps:
       - name: Checkout
@@ -28,7 +47,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'yarn'
+          cache: yarn
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
@@ -44,122 +63,11 @@ jobs:
       - name: Build
         run: ${{ matrix.build }}
 
-      - name: Archive artifacts
-        if: startsWith(matrix.os, 'ubuntu')
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: linux-artifacts
+          name: ${{ matrix.artifact }}
           path: dist/**/*
-
-      - name: Archive artifacts
-        if: startsWith(matrix.os, 'windows')
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-artifacts
-          path: dist/**/*
-
-      - name: Archive artifacts
-        if: startsWith(matrix.os, 'macos')
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-artifacts
-          path: dist/**/*
-name: Build and Release Electron App
-
-on:
-  push:
-    tags:
-      - v*.*.*
-  workflow_dispatch:
-    inputs:
-      tag_name:
-        description: 'Tag to release (e.g., v1.0.2)'
-        required: true
-        type: string
-
-permissions:
-  contents: write
-
-concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: false
-
-jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v3
-
-      - name: Install Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
-          cache: 'yarn'
-
-      - name: Cache electron and playwright downloads
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/electron
-            ~/.cache/electron-builder
-          key: ${{ runner.os }}-electron-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-electron-
-
-      - name: Install Dependencies
-        run: yarn install --frozen-lockfile
-
-      - name: build-linux
-        if: matrix.os == 'ubuntu-latest'
-        run: yarn build:linux
-
-      - name: build-mac
-        if: matrix.os == 'macos-latest'
-        env:
-          CSC_LINK: ${{ secrets.MAC_CERT_P12_BASE64 }}
-          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: yarn build:mac
-
-      - name: build-win
-        if: matrix.os == 'windows-latest'
-        run: yarn build:win
-
-      - name: Upload build artifacts (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-linux
-          path: |
-            dist/*.AppImage
-            dist/*.deb
-            dist/*.rpm
-          if-no-files-found: ignore
-
-      - name: Upload build artifacts (macOS)
-        if: matrix.os == 'macos-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-mac
-          path: |
-            dist/*.dmg
-          if-no-files-found: ignore
-
-      - name: Upload build artifacts (Windows)
-        if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-win
-          path: |
-            dist/*.exe
           if-no-files-found: ignore
 
   publish:
@@ -168,14 +76,13 @@ jobs:
     needs: build
     if: |
       (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) ||
-      (github.event_name == 'workflow_dispatch')
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name != '')
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: dist-*
-          merge-multiple: true
           path: dist
+          merge-multiple: true
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -184,11 +91,11 @@ jobs:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
           target_commitish: ${{ github.sha }}
           files: |
-            dist/*.exe
-            dist/*.dmg
-            dist/*.AppImage
-            dist/*.deb
-            dist/*.rpm
+            dist/**/*.exe
+            dist/**/*.dmg
+            dist/**/*.AppImage
+            dist/**/*.deb
+            dist/**/*.rpm
           generate_release_notes: true
           fail_on_unmatched_files: false
         env:
