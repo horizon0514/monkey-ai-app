@@ -52,6 +52,24 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      - name: Compute version from tag
+        id: compute_version
+        shell: bash
+        run: |
+          VERSION_INPUT="${{ github.event.inputs.tag_name || '' }}"
+          if [[ -n "$VERSION_INPUT" ]]; then
+            ver="${VERSION_INPUT#v}"
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            ver="${GITHUB_REF_NAME#v}"
+          else
+            ver=""
+          fi
+          echo "version=$ver" >> $GITHUB_OUTPUT
+
+      - name: Set package.json version
+        if: steps.compute_version.outputs.version != ''
+        run: npm version ${{ steps.compute_version.outputs.version }} --no-git-tag-version
+
       - name: Cache Electron downloads
         uses: actions/cache@v4
         with:
