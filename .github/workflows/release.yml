@@ -1,3 +1,69 @@
+name: Build Electron App
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            build: npm run build:linux:appimage
+          - os: windows-latest
+            build: npm run build:win:x64
+          - os: macos-latest
+            build: npm run build:mac:arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Cache Electron downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+          key: ${{ runner.os }}-electron-${{ hashFiles('yarn.lock') }}
+
+      - name: Build
+        run: ${{ matrix.build }}
+
+      - name: Archive artifacts
+        if: startsWith(matrix.os, 'ubuntu')
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: dist/**/*
+
+      - name: Archive artifacts
+        if: startsWith(matrix.os, 'windows')
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: dist/**/*
+
+      - name: Archive artifacts
+        if: startsWith(matrix.os, 'macos')
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: dist/**/*
 name: Build and Release Electron App
 
 on:
