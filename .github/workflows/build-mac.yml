@@ -1,0 +1,61 @@
+name: Build macOS DMG
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  build-mac:
+    name: macOS ${{ matrix.arch }}
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, arm64]
+
+    env:
+      ELECTRON_CACHE: ${{ runner.temp }}/electron
+      ELECTRON_BUILDER_CACHE: ${{ runner.temp }}/electron-builder
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Cache Electron caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.ELECTRON_CACHE }}
+            ${{ env.ELECTRON_BUILDER_CACHE }}
+          key: electron-caches-${{ runner.os }}-${{ matrix.arch }}-${{ hashFiles('**/yarn.lock') }}
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build renderer and main
+        run: yarn build
+
+      - name: Build macOS DMG (x64)
+        if: matrix.arch == 'x64'
+        run: yarn build:mac:x64
+
+      - name: Build macOS DMG (arm64)
+        if: matrix.arch == 'arm64'
+        run: yarn build:mac:arm64
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chat-monkey-mac-${{ matrix.arch }}
+          path: dist/*.dmg
+          if-no-files-found: error
+          retention-days: 14
+
