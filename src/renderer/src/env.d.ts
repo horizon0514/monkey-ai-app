@@ -6,6 +6,7 @@ declare global {
   interface Window {
     electron: {
       switchTab: (tab: string) => Promise<void>
+      getCurrentTab: () => Promise<string | null>
       getSiteConfigs: () => Promise<SiteConfig[]>
       setSiteConfigs: (configs: SiteConfig[]) => Promise<void>
       openSettings: () => Promise<void>
@@ -74,6 +75,10 @@ declare global {
         | { ok: true; models: unknown[] }
         | { ok: false; error: string; detail?: string }
       >
+      getSidebarWidth: () => Promise<{
+        width: number
+        collapsed: boolean
+      }>
       ipcRenderer: {
         send: (channel: string, data: unknown) => void
         on: (

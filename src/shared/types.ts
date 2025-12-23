@@ -3,7 +3,7 @@ export interface SiteConfig {
   title: string
   url: string
   enabled: boolean
-  external?: boolean
+  icon?: string // Icon name from lucide-react
 }
 
 // Simplified union types for flexible configuration

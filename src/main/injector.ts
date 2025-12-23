@@ -20,6 +20,9 @@ const BASELINE_CSS = `
 }
 `
 
+// 标记：用于检测 CSS 是否已经注入过
+const INJECTION_MARKER = '__unify_injected__'
+
 /**
  * Simplified injection system with support for:
  * - Flexible config (string or array for hide/css)
@@ -65,6 +68,22 @@ export class UnifyInjector {
   }
 
   private async injectCSS(wc: WebContents, config: MergedConfig) {
+    // 首先检查是否已经注入过 CSS（preload 阶段已注入）
+    const hasInjected = await wc
+      .executeJavaScript(
+        `typeof document !== 'undefined' && document.documentElement.dataset[${JSON.stringify(INJECTION_MARKER)}]`
+      )
+      .catch(() => 'false')
+
+    if (hasInjected === 'true') {
+      // 已经在 preload 阶段注入过，跳过 CSS 注入
+      // 只处理用户自定义 CSS（因为这是动态的）
+      if (config.userEnabled && config.userCss) {
+        await wc.insertCSS(config.userCss)
+      }
+      return
+    }
+
     const cssParts: string[] = []
 
     // Baseline CSS if enabled
@@ -105,6 +124,10 @@ export class UnifyInjector {
     const combinedCSS = cssParts.filter(Boolean).join('\n\n')
     if (combinedCSS) {
       await wc.insertCSS(combinedCSS)
+      // 标记已注入
+      await wc.executeJavaScript(
+        `if(typeof document !== 'undefined') document.documentElement.dataset[${JSON.stringify(INJECTION_MARKER)}] = 'true'`
+      )
     }
   }
 

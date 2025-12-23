@@ -14,6 +14,15 @@ function App() {
   const [showSettings, setShowSettings] = useState(false)
 
   useEffect(() => {
+    // 初始化时从主进程获取当前激活的 tab
+    const initCurrentTab = async () => {
+      const currentTab = await window.electron.getCurrentTab()
+      if (currentTab) {
+        setSelectedTab(currentTab)
+      }
+    }
+    initCurrentTab()
+
     // 监听站点配置变化
     const handleSiteConfigsChange = async () => {
       const configs = await window.electron.getSiteConfigs()

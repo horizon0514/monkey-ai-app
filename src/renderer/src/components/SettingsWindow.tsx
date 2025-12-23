@@ -40,13 +40,13 @@ export const SettingsModal: React.FC<SettingsProps> = ({
   const [addingDraft, setAddingDraft] = useState<AssistantFormDraft>({
     title: '',
     url: '',
-    external: false
+    icon: 'Bot'
   })
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingDraft, setEditingDraft] = useState<AssistantFormDraft>({
     title: '',
     url: '',
-    external: false
+    icon: 'Bot'
   })
 
   // LLM 配置
@@ -143,7 +143,7 @@ export const SettingsModal: React.FC<SettingsProps> = ({
   // 新增助手
   const handleAdd = () => {
     setIsAdding(true)
-    setAddingDraft({ title: '', url: '', external: false })
+    setAddingDraft({ title: '', url: '', icon: 'Bot' })
   }
 
   const handleAddSave = async () => {
@@ -162,7 +162,7 @@ export const SettingsModal: React.FC<SettingsProps> = ({
       title,
       url,
       enabled: true,
-      external: addingDraft.external
+      icon: addingDraft.icon
     }
     const newSites = [...sites, newSite]
     await commitSites(newSites)
@@ -179,7 +179,7 @@ export const SettingsModal: React.FC<SettingsProps> = ({
     setEditingDraft({
       title: site.title,
       url: site.url,
-      external: Boolean(site.external)
+      icon: site.icon || 'Bot'
     })
   }
 
@@ -188,9 +188,7 @@ export const SettingsModal: React.FC<SettingsProps> = ({
     const url = editingDraft.url.trim()
     if (!title || !isValidUrl(url)) return
     const newSites = sites.map(s =>
-      s.id === siteId
-        ? { ...s, title, url, external: editingDraft.external }
-        : s
+      s.id === siteId ? { ...s, title, url, icon: editingDraft.icon } : s
     )
     await commitSites(newSites)
     setEditingId(null)
@@ -203,27 +201,6 @@ export const SettingsModal: React.FC<SettingsProps> = ({
   // 删除助手
   const handleDelete = async (siteId: string) => {
     const newSites = sites.filter(s => s.id !== siteId)
-    await commitSites(newSites)
-  }
-
-  // 排序（上移/下移）
-  const moveUp = async (index: number) => {
-    if (index <= 0) return
-    const newSites = [...sites]
-    ;[newSites[index - 1], newSites[index]] = [
-      newSites[index],
-      newSites[index - 1]
-    ]
-    await commitSites(newSites)
-  }
-
-  const moveDown = async (index: number) => {
-    if (index >= sites.length - 1) return
-    const newSites = [...sites]
-    ;[newSites[index + 1], newSites[index]] = [
-      newSites[index],
-      newSites[index + 1]
-    ]
     await commitSites(newSites)
   }
 
@@ -357,7 +334,6 @@ export const SettingsModal: React.FC<SettingsProps> = ({
             {editingId && (
               <AssistantForm
                 mode='edit'
-                editId={editingId}
                 draft={editingDraft}
                 onDraftChange={setEditingDraft}
                 onSave={() => handleEditSave(editingId)}
@@ -370,8 +346,7 @@ export const SettingsModal: React.FC<SettingsProps> = ({
               sites={filteredSites}
               editingId={editingId}
               onToggle={handleSiteToggle}
-              onMoveUp={moveUp}
-              onMoveDown={moveDown}
+              onReorder={commitSites}
               onEdit={startEdit}
               onDelete={handleDelete}
             />
@@ -417,8 +392,7 @@ export const SettingsModal: React.FC<SettingsProps> = ({
                         id: String(it.id),
                         title: String(it.title),
                         url: String(it.url),
-                        enabled: Boolean(it.enabled),
-                        external: Boolean(it.external)
+                        enabled: Boolean(it.enabled)
                       }))
                     await commitSites(cleaned)
                   } catch (e) {

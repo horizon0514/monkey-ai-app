@@ -14,8 +14,7 @@ import { SiteConfig } from '../shared/types'
 
 // Constants
 const UI_CONSTANTS = {
-  TITLEBAR_HEIGHT: 48,
-  RESIZE_HANDLE_WIDTH: 1,
+  // 移除硬编码的布局常量，使用容器的实际边界
   DEFAULT_SIDEBAR_WIDTH: 240,
   MIN_SIDEBAR_WIDTH: 200,
   MAX_SIDEBAR_WIDTH: 400
@@ -74,6 +73,13 @@ export class SideViewManager {
   private readonly mainWindow: BrowserWindow
   private readonly store: Store
   private readonly injector: UnifyInjector
+  // 缓存容器边界，避免频繁跨进程调用
+  private cachedContainerBounds: {
+    x: number
+    y: number
+    width: number
+    height: number
+  } | null = null
 
   constructor(mainWindow: BrowserWindow) {
     this.mainWindow = mainWindow
@@ -117,6 +123,12 @@ export class SideViewManager {
     this.store.set(STORE_KEYS.SIDEBAR_COLLAPSED, this.isCollapsed)
 
     this.updateViewBounds()
+
+    // 通知所有窗口侧边栏宽度已更新
+    this.mainWindow.webContents.send('sidebar-width-updated', {
+      width: this.lastSidebarWidth,
+      collapsed: this.isCollapsed
+    })
   }
 
   getSidebarWidth(): number {
@@ -188,12 +200,12 @@ export class SideViewManager {
             ...(site.hide || [])
           ]
           const extraCSS: string[] = [
-            ...(wildcard.extraCSS || []),
-            ...(site.extraCSS || [])
+            ...(wildcard.css || wildcard.extraCSS || []),
+            ...(site.css || site.extraCSS || [])
           ]
           earlyCssVars = {
-            ...(wildcard.cssVars || {}),
-            ...(site.cssVars || {})
+            ...(wildcard.cssVars || wildcard.vars || {}),
+            ...(site.cssVars || site.vars || {})
           }
           earlyClassTweaks = [
             ...(wildcard.classTweaks || []),
@@ -204,15 +216,23 @@ export class SideViewManager {
             ...(site.styleTweaks || [])
           ]
 
-          // 构造隐藏规则 CSS
+          // 构造隐藏规则 CSS（使用更强的选择器确保优先级）
           if (hide.length > 0) {
-            earlyCss +=
-              hide.map(sel => `${sel}{display:none!important}`).join('\n') +
-              '\n'
+            // 使用 @layer 确保样式优先级，同时添加 !important
+            earlyCss += `@layer app-hide {${hide.map(sel => `${sel}{display:none!important}`).join(' ')} }\n`
           }
           // 追加额外 CSS
           if (extraCSS.length > 0) {
             earlyCss += extraCSS.join('\n') + '\n'
+          }
+
+          // 添加 CSS 变量
+          if (Object.keys(earlyCssVars).length > 0) {
+            earlyCss += ':root{'
+            for (const [k, v] of Object.entries(earlyCssVars)) {
+              earlyCss += `${k}:${v};`
+            }
+            earlyCss += '}\n'
           }
         }
       } catch {
@@ -368,42 +388,65 @@ export class SideViewManager {
     return config?.url || ''
   }
 
-  private calculateViewBounds(): {
+  /**
+   * 从渲染进程获取 #webview-container 的屏幕坐标边界
+   * 这是新的布局架构的核心：不再手动计算偏移量，而是直接使用容器的实际边界
+   */
+  private async getContainerBounds(): Promise<{
     x: number
     y: number
     width: number
     height: number
-  } {
-    const contentBounds = this.mainWindow.getContentBounds()
-
-    // 确保宽度和高度至少为1，避免无效的尺寸
-    const width = Math.max(
-      1,
-      contentBounds.width - this.sidebarWidth - UI_CONSTANTS.RESIZE_HANDLE_WIDTH
-    )
-    const height = Math.max(
-      1,
-      contentBounds.height - UI_CONSTANTS.TITLEBAR_HEIGHT
-    )
-
-    if (this.isCollapsed) {
-      return {
-        x: 0,
-        y: UI_CONSTANTS.TITLEBAR_HEIGHT,
-        width: contentBounds.width,
-        height
-      }
+  }> {
+    // 如果有缓存且窗口大小未改变，返回缓存的边界
+    if (this.cachedContainerBounds) {
+      return this.cachedContainerBounds
     }
 
+    try {
+      const result = await this.mainWindow.webContents.executeJavaScript(`
+        (() => {
+          const container = document.getElementById('webview-container');
+          if (!container) return null;
+          const rect = container.getBoundingClientRect();
+          // 获取窗口的屏幕位置
+          return {
+            rect: {
+              x: rect.x,
+              y: rect.y,
+              width: rect.width,
+              height: rect.height
+            }
+          };
+        })()
+      `)
+
+      if (result && result.rect) {
+        // 计算相对于窗口内容的坐标（WebContentsView 使用窗口内容坐标）
+        const bounds = {
+          x: Math.round(result.rect.x),
+          y: Math.round(result.rect.y),
+          width: Math.max(1, Math.round(result.rect.width)),
+          height: Math.max(1, Math.round(result.rect.height))
+        }
+        this.cachedContainerBounds = bounds
+        return bounds
+      }
+    } catch (e) {
+      console.warn('Failed to get container bounds, using fallback:', e)
+    }
+
+    // 降级方案：使用窗口内容边界作为最后手段
+    const contentBounds = this.mainWindow.getContentBounds()
     return {
-      x: this.sidebarWidth + UI_CONSTANTS.RESIZE_HANDLE_WIDTH,
-      y: UI_CONSTANTS.TITLEBAR_HEIGHT,
-      width,
-      height
+      x: 0,
+      y: 0,
+      width: Math.max(1, contentBounds.width),
+      height: Math.max(1, contentBounds.height)
     }
   }
 
-  showSideView(id: string) {
+  async showSideView(id: string) {
     const sideView = this.sideViews.get(id)
     if (!sideView) {
       console.error(`Side view ${id} not found`)
@@ -424,6 +467,9 @@ export class SideViewManager {
         return
       }
 
+      // 获取容器的实际边界（新架构核心）
+      const bounds = await this.getContainerBounds()
+
       // 若已有其他视图显示，先移除
       if (this.currentViewId) {
         const currentView = this.sideViews.get(this.currentViewId)
@@ -436,9 +482,8 @@ export class SideViewManager {
         }
       }
 
-      // 显示新视图
+      // 显示新视图，使用容器边界
       this.mainWindow.contentView.addChildView(sideView.view)
-      const bounds = this.calculateViewBounds()
       sideView.view.setBounds(bounds)
       this.currentViewId = id
 
@@ -503,13 +548,15 @@ export class SideViewManager {
       : null
   }
 
-  updateViewBounds() {
+  async updateViewBounds() {
     if (!this.currentViewId) return
 
     const currentView = this.sideViews.get(this.currentViewId)
 
     if (currentView) {
-      const bounds = this.calculateViewBounds()
+      // 清除缓存，重新获取容器边界
+      this.cachedContainerBounds = null
+      const bounds = await this.getContainerBounds()
       currentView.view.setBounds(bounds)
     }
   }
@@ -632,5 +679,9 @@ export class SideViewManager {
     if (currentView.view.webContents.canGoForward()) {
       currentView.view.webContents.goForward()
     }
+  }
+
+  getCurrentViewId(): string | null {
+    return this.currentViewId
   }
 }

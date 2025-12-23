@@ -283,8 +283,8 @@ export class WindowManager {
     return this.sideViewManager.createSideView(id, title, options)
   }
 
-  showSideView(id: string) {
-    this.sideViewManager.showSideView(id)
+  async showSideView(id: string) {
+    await this.sideViewManager.showSideView(id)
   }
 
   closeSideView(id: string) {
@@ -297,6 +297,10 @@ export class WindowManager {
 
   getCurrentView() {
     return this.sideViewManager.getCurrentView()
+  }
+
+  getCurrentViewId() {
+    return this.sideViewManager.getCurrentViewId()
   }
 
   hideCurrentView() {

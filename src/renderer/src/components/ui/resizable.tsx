@@ -29,21 +29,26 @@ function ResizableHandle({
   return (
     <ResizablePrimitive.PanelResizeHandle
       className={cn(
-        'relative flex w-px items-center justify-center bg-border/50 transition-all hover:bg-border/80',
+        // 基础样式 - 移除 transition 以获得更好的拖动性能
+        'relative flex w-px items-center justify-center bg-border/50',
         'after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 after:bg-transparent',
         'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1',
+        // 性能优化 - 使用 will-change 提示浏览器优化
+        'will-change-transform',
+        // 方向支持
         'data-[panel-group-direction=vertical]:h-px data-[panel-group-direction=vertical]:w-full',
         'data-[panel-group-direction=vertical]:after:left-0 data-[panel-group-direction=vertical]:after:h-1',
         'data-[panel-group-direction=vertical]:after:w-full data-[panel-group-direction=vertical]:after:-translate-y-1/2',
         'data-[panel-group-direction=vertical]:after:translate-x-0 [&[data-panel-group-direction=vertical]>div]:rotate-90',
-        'group/handle data-[dragging=true]:bg-blue-500/50 data-[dragging=true]:after:bg-blue-500/20',
+        // 拖动状态 - 使用更明显的视觉反馈
+        'group/handle data-[dragging=true]:bg-primary/60',
         className
       )}
       {...props}
     >
       {withHandle && (
-        <div className='z-10 flex h-4 w-3 items-center justify-center rounded-sm border bg-border/80 transition-colors hover:bg-border group-data-[dragging=true]/handle:border-blue-500/50 group-data-[dragging=true]/handle:bg-blue-500/80'>
-          <DragHandleDots2Icon className='h-2.5 w-2.5 group-data-[dragging=true]/handle:text-blue-100' />
+        <div className='z-10 flex h-4 w-3 items-center justify-center rounded-sm border bg-border/80 group-data-[dragging=true]/handle:border-primary/50 group-data-[dragging=true]/handle:bg-primary/80'>
+          <DragHandleDots2Icon className='h-2.5 w-2.5 group-data-[dragging=true]/handle:text-primary-foreground' />
         </div>
       )}
     </ResizablePrimitive.PanelResizeHandle>

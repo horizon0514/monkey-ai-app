@@ -5,6 +5,7 @@ import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
 // Custom APIs for renderer
 const api = {
   switchTab: (tab: string) => ipcRenderer.invoke('switch-tab', tab),
+  getCurrentTab: () => ipcRenderer.invoke('get-current-tab'),
   getSiteConfigs: () => ipcRenderer.invoke('get-site-configs'),
   setSiteConfigs: (configs: unknown) =>
     ipcRenderer.invoke('set-site-configs', configs),
@@ -44,6 +45,8 @@ const api = {
   setLlmSettings: (settings: unknown) =>
     ipcRenderer.invoke('set-llm-settings', settings),
   fetchOpenRouterModels: () => ipcRenderer.invoke('fetch-openrouter-models'),
+  // Sidebar APIs
+  getSidebarWidth: () => ipcRenderer.invoke('get-sidebar-width'),
   ipcRenderer: {
     send: (channel: string, data: unknown) => {
       ipcRenderer.send(channel, data)
@@ -85,7 +88,10 @@ try {
       try {
         const style = document.createElement('style')
         style.textContent = css
-        document.documentElement.appendChild(style)
+        // 使用 prepend 确保样式尽早生效
+        document.documentElement.prepend(style)
+        // 设置标记，告诉 injector CSS 已经注入过
+        document.documentElement.dataset.__unify_injected__ = 'true'
       } catch {
         // ignore
       }

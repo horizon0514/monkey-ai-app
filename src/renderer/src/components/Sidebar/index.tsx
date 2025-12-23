@@ -1,14 +1,8 @@
 import React from 'react'
 import { Button } from '@renderer/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@renderer/components/ui/tabs'
-import {
-  Bot,
-  Brain,
-  MessageSquare,
-  LucideIcon,
-  Settings,
-  MessageCircle
-} from 'lucide-react'
+import { Bot, Settings, MessageCircle } from 'lucide-react'
+import * as LucideIcons from 'lucide-react'
 import { SiteConfig } from '../../../../shared/types'
 
 interface SidebarProps {
@@ -20,13 +14,19 @@ interface SidebarProps {
   onOpenSettings?: () => void
 }
 
-// 为每个网站ID定义对应的图标
-const SITE_ICONS: Record<string, LucideIcon> = {
-  deepseek: Bot,
-  tongyi: Brain,
-  wenxin: MessageSquare,
-  yuanbao: Bot,
-  doubao: Bot
+// 从 SiteConfig 的 icon 字段动态获取图标组件
+type IconComponent = React.ComponentType<any>
+
+function getIconComponent(iconName?: string): IconComponent {
+  if (!iconName) return Bot
+
+  // 尝试从 lucide-react 获取图标
+  const icons = LucideIcons as unknown as Record<string, IconComponent>
+  const icon = icons[iconName]
+  if (icon) return icon
+
+  // 默认返回 Bot
+  return Bot
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -36,15 +36,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   sites,
   onOpenSettings
 }) => {
-  const items: Array<{ id: string; title: string; icon: LucideIcon }> = [
-    { id: 'chat', title: 'Chat', icon: MessageCircle }
-  ].concat(
-    sites.map(s => ({
+  const items: Array<{ id: string; title: string; icon: IconComponent }> = [
+    { id: 'chat', title: 'Chat', icon: MessageCircle as IconComponent },
+    ...sites.map(s => ({
       id: s.id,
       title: s.title,
-      icon: SITE_ICONS[s.id] || Bot
+      icon: getIconComponent(s.icon)
     }))
-  )
+  ]
 
   const currentValue = items.some(s => s.id === value)
     ? value

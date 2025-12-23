@@ -210,6 +210,7 @@ function setupIpcHandlers() {
   // 防止开发时热重载导致重复注册：先清理已存在的 handler/listener
   const handleChannels = [
     'switch-tab',
+    'get-current-tab',
     'get-site-configs',
     'set-site-configs',
     'open-settings',
@@ -262,23 +263,17 @@ function setupIpcHandlers() {
       .getSiteConfigs()
       .find(config => config.id === tab)
     if (siteConfig) {
-      // 如果标记为外部打开，则在系统浏览器中打开 URL 并不创建内嵌视图
-      if (siteConfig.external) {
-        if (siteConfig.url) {
-          await shell.openExternal(siteConfig.url)
-        }
-        // 同时隐藏当前视图，避免挡住主界面
-        windowManager.hideCurrentView()
-        return
-      }
-
       windowManager.createSideView(siteConfig.id, siteConfig.title, {
         webPreferences: {
           contextIsolation: true
         }
       })
-      windowManager.showSideView(siteConfig.id)
+      await windowManager.showSideView(siteConfig.id)
     }
+  })
+
+  ipcMain.handle('get-current-tab', () => {
+    return windowManager?.getCurrentViewId() || null
   })
 
   // 监听侧边栏大小变化
@@ -286,6 +281,17 @@ function setupIpcHandlers() {
     if (windowManager) {
       windowManager.updateSidebarWidth(width)
     }
+  })
+
+  // 获取侧边栏宽度
+  ipcMain.handle('get-sidebar-width', () => {
+    if (windowManager) {
+      return {
+        width: windowManager.getLastSidebarWidth(),
+        collapsed: windowManager.isCollapsedSidebar()
+      }
+    }
+    return { width: 240, collapsed: false }
   })
 
   // 处理网站配置

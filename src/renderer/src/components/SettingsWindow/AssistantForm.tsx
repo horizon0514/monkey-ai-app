@@ -1,13 +1,13 @@
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
-import { Switch } from '../ui/switch'
 import { Label } from '../ui/label'
+import { IconPicker } from '../IconPicker'
 import { X, Save } from 'lucide-react'
 
 export type AssistantFormDraft = {
   title: string
   url: string
-  external: boolean
+  icon?: string
 }
 
 type AssistantFormProps = {
@@ -16,7 +16,6 @@ type AssistantFormProps = {
   onDraftChange: (draft: AssistantFormDraft) => void
   onSave: () => void
   onCancel: () => void
-  editId?: string
 }
 
 export const AssistantForm: React.FC<AssistantFormProps> = ({
@@ -24,8 +23,7 @@ export const AssistantForm: React.FC<AssistantFormProps> = ({
   draft,
   onDraftChange,
   onSave,
-  onCancel,
-  editId
+  onCancel
 }) => {
   const title = mode === 'add' ? '新增助手' : '编辑助手'
 
@@ -66,23 +64,17 @@ export const AssistantForm: React.FC<AssistantFormProps> = ({
         </div>
       </div>
 
-      <div className='flex items-center gap-3'>
-        <Switch
-          id={`${mode}-external-${editId || 'new'}`}
-          checked={draft.external}
-          onCheckedChange={checked =>
-            onDraftChange({ ...draft, external: checked })
-          }
-        />
-        <div className='flex flex-col'>
-          <Label
-            htmlFor={`${mode}-external-${editId || 'new'}`}
-            className='cursor-pointer text-sm'
-          >
-            在外部浏览器打开
-          </Label>
+      <div className='grid grid-cols-1 gap-3 sm:grid-cols-[1fr_2fr]'>
+        <div className='space-y-1.5'>
+          <Label className='text-xs'>图标</Label>
+          <IconPicker
+            value={draft.icon}
+            onChange={icon => onDraftChange({ ...draft, icon })}
+          />
+        </div>
+        <div className='flex items-center'>
           <p className='text-xs text-muted-foreground'>
-            适用于不支持内嵌的站点（如需登录的网站）
+            选择一个图标来在侧边栏中标识此助手
           </p>
         </div>
       </div>
