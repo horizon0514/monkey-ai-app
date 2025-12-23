@@ -464,6 +464,62 @@ function setupIpcHandlers() {
     }
   })
 
+  // User custom CSS/JS injections
+  interface UserInjection {
+    css?: string
+    js?: string
+    enabled?: boolean
+  }
+
+  ipcMain.handle('get-user-injection', (_evt, siteId: string) => {
+    const key = `userInjection.${siteId}`
+    return (
+      (store.get(key) as UserInjection) || { css: '', js: '', enabled: false }
+    )
+  })
+
+  ipcMain.handle(
+    'set-user-injection',
+    (_evt, siteId: string, injection: UserInjection) => {
+      const key = `userInjection.${siteId}`
+      store.set(key, injection)
+
+      // Notify windows to reload if the site is currently active
+      BrowserWindow.getAllWindows().forEach(window => {
+        window.webContents.send('user-injection-changed', { siteId, injection })
+      })
+
+      return { ok: true }
+    }
+  )
+
+  ipcMain.handle('clear-user-injection', (_evt, siteId: string) => {
+    const key = `userInjection.${siteId}`
+    ;(store as any).delete(key)
+
+    BrowserWindow.getAllWindows().forEach(window => {
+      window.webContents.send('user-injection-changed', {
+        siteId,
+        injection: null
+      })
+    })
+
+    return { ok: true }
+  })
+
+  ipcMain.handle('list-user-injections', () => {
+    // Return all user injections
+    const all = store.store
+    const injections: Record<string, UserInjection> = {}
+    for (const key in all) {
+      if (key.startsWith('userInjection.')) {
+        const siteId = key.replace('userInjection.', '')
+        injections[siteId] = all[key] as UserInjection
+      }
+    }
+    return injections
+  })
+
   // 监听主题变化
   nativeTheme.on('updated', () => {
     const windows = BrowserWindow.getAllWindows()

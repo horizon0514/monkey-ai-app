@@ -45,9 +45,8 @@ export class WindowManager {
     this.sideViewManager = new SideViewManager(mainWindow)
 
     // 从存储中加载配置，如果没有则使用默认配置
-    const savedConfigs = this.store.get('siteConfigs') as
-      | SiteConfig[]
-      | undefined
+    // 注意：使用与 main/index.ts 一致的 'sites' key
+    const savedConfigs = this.store.get('sites') as SiteConfig[] | undefined
     if (savedConfigs) {
       this.setSiteConfigs(savedConfigs)
     } else {
@@ -263,8 +262,9 @@ export class WindowManager {
       }
     }
 
-    // 存储并更新到 SideViewManager
-    this.store.set('siteConfigs', configs)
+    // 存储到统一位置（使用 'sites' key 与 main/index.ts 保持一致）
+    this.store.set('sites', configs)
+    // 更新到 SideViewManager（不再重复存储）
     this.sideViewManager.setSiteConfigs(configs)
 
     // 配置变更后按需延迟预热，避免频繁触发 IndexedDB

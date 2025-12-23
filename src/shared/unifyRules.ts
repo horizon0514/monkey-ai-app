@@ -2,6 +2,7 @@ import { DomainToUnifyRules } from './types'
 
 export const unifyRules: DomainToUnifyRules = {
   '*': {
+    // Hide common annoyances (supports comma-separated string or array)
     hide: [
       '[role=banner]',
       '[id*=cookie i]',
@@ -9,7 +10,9 @@ export const unifyRules: DomainToUnifyRules = {
       '.announcement, .tooltip, .toast, .promo, .upgrade',
       'iframe[title*=ad i]'
     ],
-    cssVars: {
+
+    // CSS variables (use 'vars' as shorthand)
+    vars: {
       '--font-family':
         'Inter, Noto Sans SC, system-ui, -apple-system, Segoe UI, Arial, sans-serif',
       '--font-size-base': '14px',
@@ -20,25 +23,34 @@ export const unifyRules: DomainToUnifyRules = {
       '--space-3': '16px',
       '--max-width': '100%'
     },
-    extraCSS: [
-      '.unify-container{max-width:var(--max-width);margin:0 auto;padding:var(--space-3)}',
-      '@layer app-base {html,body{font-family:var(--font-family);font-size:var(--font-size-base);line-height:var(--line-height);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}}',
-      '@layer app-tweaks {img,video{max-width:100%;height:auto}}'
-    ],
+
+    // Direct CSS injection (single string or array)
+    css: `
+      .unify-container { max-width: var(--max-width); margin: 0 auto; padding: var(--space-3) }
+      @layer app-base {
+        html, body {
+          font-family: var(--font-family);
+          font-size: var(--font-size-base);
+          line-height: var(--line-height);
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+      }
+      @layer app-tweaks {
+        img, video { max-width: 100%; height: auto }
+      }
+    `,
+
     flags: { darkModeFix: true, compact: true, baselineCss: false }
   },
+
   'chat.deepseek.com': {
-    hide: ['header, nav, footer', '.banner, .promo, .gdpr, .upgrade', 'aside'],
-    extraCSS: [],
+    hide: 'header, nav, footer, .banner, .promo, .gdpr, .upgrade, aside',
     classTweaks: [{ selector: 'main', add: ['unify-container'] }]
   },
+
   'tongyi.com': {
-    hide: [
-      '.aliyun-nav, .aliyun-footer, .cookie, .banner, [role=banner]',
-      '#new-nav-tab-wrapper, [class*="navTab"], tongyiDI-view-container'
-    ],
-    extraCSS: [],
-    classTweaks: [],
+    hide: '.aliyun-nav, .aliyun-footer, .cookie, .banner, [role=banner], #new-nav-tab-wrapper, [class*="navTab"], tongyiDI-view-container',
     styleTweaks: [
       {
         selector: '#ice-container>div',
@@ -52,22 +64,17 @@ export const unifyRules: DomainToUnifyRules = {
       }
     ]
   },
+
   'yiyan.baidu.com': {
-    hide: ['header, nav, footer', '.banner, .cookie, .toast, .promo'],
-    extraCSS: [],
-    classTweaks: []
+    hide: 'header, nav, footer, .banner, .cookie, .toast, .promo'
   },
+
   'yuanbao.tencent.com': {
-    hide: [
-      '.global-header, .t-header, footer, .cookie, .banner, .promo',
-      '.t-popup, .agent-dialogue__tool, [data-item-title="Download Yuanbao Desktop"],[class*="index_pc_download"]'
-    ],
-    extraCSS: [],
-    classTweaks: []
+    hide: '.global-header, .t-header, footer, .cookie, .banner, .promo, .t-popup, .agent-dialogue__tool, [data-item-title="Download Yuanbao Desktop"], [class*="index_pc_download"]'
   },
+
   'www.doubao.com': {
-    hide: ['[data-testid="sidebar_download_desktop_btn"]'],
-    extraCSS: [],
+    hide: '[data-testid="sidebar_download_desktop_btn"]',
     classTweaks: [{ selector: 'main', add: ['unify-container'] }]
   }
 }

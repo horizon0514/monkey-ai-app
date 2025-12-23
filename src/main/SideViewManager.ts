@@ -21,9 +21,9 @@ const UI_CONSTANTS = {
   MAX_SIDEBAR_WIDTH: 400
 } as const
 
-// Store keys
+// Store keys - 使用与 main/index.ts 一致的 key
 const STORE_KEYS = {
-  SITE_CONFIGS: 'siteConfigs',
+  SITE_CONFIGS: 'sites', // 与 main/index.ts 中的 defaults.sites 保持一致
   SIDEBAR_WIDTH: 'sidebarWidth',
   SIDEBAR_COLLAPSED: 'sidebarCollapsed'
 } as const
@@ -146,7 +146,8 @@ export class SideViewManager {
     for (const config of configs) {
       this.siteConfigs.set(config.id, config)
     }
-    this.store.set(STORE_KEYS.SITE_CONFIGS, configs)
+    // 注意：不再在此处存储，由 WindowManager 统一处理存储
+    // 避免重复存储和数据不一致问题
   }
 
   getSiteConfigs(): SiteConfig[] {

@@ -5,7 +5,6 @@ import {
   ResizableHandle
 } from '@renderer/components/ui/resizable'
 import { Titlebar } from '../Titlebar'
-import { cn } from '@renderer/lib/utils'
 
 const MIN_SIDEBAR_WIDTH = 200 // 最小宽度（像素）
 const MAX_SIDEBAR_WIDTH = 400 // 最大宽度（像素）
@@ -44,9 +43,6 @@ export const Layout: React.FC<LayoutProps> = ({
   const [sidebarSize, setSidebarSize] = useState(
     pixelToPercentage(DEFAULT_SIDEBAR_WIDTH)
   )
-  const [lastSidebarSize, setLastSidebarSize] = useState(
-    pixelToPercentage(DEFAULT_SIDEBAR_WIDTH)
-  )
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const lastUpdateTime = useRef(0)
   const pendingUpdate = useRef<number | null>(null)
@@ -80,7 +76,6 @@ export const Layout: React.FC<LayoutProps> = ({
     (sizes: number[]) => {
       if (!isSidebarCollapsed && sizes[0] > 0) {
         setSidebarSize(sizes[0])
-        setLastSidebarSize(sizes[0])
 
         // 计算实际像素宽度并确保在边界内
         const sidebarWidth = Math.floor((window.innerWidth * sizes[0]) / 100)
@@ -108,27 +103,21 @@ export const Layout: React.FC<LayoutProps> = ({
   // 处理折叠状态变化
   const handleToggleCollapse = useCallback(() => {
     const willCollapse = !isSidebarCollapsed
+    setIsSidebarCollapsed(willCollapse)
 
+    // 发送更新到主进程
     if (willCollapse) {
-      // 折叠：保存当前宽度并发送 0 宽度到主进程
-      setLastSidebarSize(sidebarSize)
-      setSidebarSize(0)
       sendUpdate(0, true)
     } else {
-      // 展开：恢复上次宽度并同步到主进程
-      setSidebarSize(lastSidebarSize)
-      const sidebarWidthPx = Math.floor(
-        (window.innerWidth * lastSidebarSize) / 100
-      )
+      // 恢复到上次保存的宽度
+      const sidebarWidthPx = Math.floor((window.innerWidth * sidebarSize) / 100)
       const boundedWidth = Math.max(
         MIN_SIDEBAR_WIDTH,
         Math.min(sidebarWidthPx, MAX_SIDEBAR_WIDTH)
       )
       sendUpdate(boundedWidth, false)
     }
-
-    setIsSidebarCollapsed(willCollapse)
-  }, [isSidebarCollapsed, sidebarSize, lastSidebarSize, sendUpdate])
+  }, [isSidebarCollapsed, sidebarSize, sendUpdate])
 
   // 暴露折叠状态变化的回调
   useEffect(() => {
@@ -139,6 +128,10 @@ export const Layout: React.FC<LayoutProps> = ({
   const sidebarWidth = Math.floor(
     (window.innerWidth * (isSidebarCollapsed ? 0 : sidebarSize)) / 100
   )
+
+  // 使用 key 强制在折叠状态改变时重新挂载 Panel
+  // 这样 defaultSize 会重新应用，解决拖动后折叠再展开的错位问题
+  const panelGroupKey = isSidebarCollapsed ? 'collapsed' : 'expanded'
 
   return (
     <div className='flex h-screen flex-col bg-muted'>
@@ -172,29 +165,25 @@ export const Layout: React.FC<LayoutProps> = ({
         </div>
       </div>
       <ResizablePanelGroup
+        key={panelGroupKey}
         direction='horizontal'
         className='flex-1 [&>div[role=separator]]:w-2 [&>div[role=separator]]:bg-transparent [&>div[role=separator]]:transition-colors [&>div[role=separator]]:hover:bg-accent/10'
         onLayout={handleSidebarResize}
       >
-        <ResizablePanel
-          defaultSize={isSidebarCollapsed ? 0 : sidebarSize}
-          minSize={
-            isSidebarCollapsed ? 0 : pixelToPercentage(MIN_SIDEBAR_WIDTH)
-          }
-          maxSize={
-            isSidebarCollapsed ? 0 : pixelToPercentage(MAX_SIDEBAR_WIDTH)
-          }
-          className={cn('min-h-full', isSidebarCollapsed && 'hidden')}
-        >
-          <div className='flex h-full flex-col'>{sidebar}</div>
-        </ResizablePanel>
-        {!isSidebarCollapsed && <CustomResizeHandle />}
-        <ResizablePanel
-          defaultSize={isSidebarCollapsed ? 100 : 100 - sidebarSize}
-          minSize={30}
-        >
-          {children}
-        </ResizablePanel>
+        {!isSidebarCollapsed && (
+          <>
+            <ResizablePanel
+              defaultSize={sidebarSize}
+              minSize={pixelToPercentage(MIN_SIDEBAR_WIDTH)}
+              maxSize={pixelToPercentage(MAX_SIDEBAR_WIDTH)}
+              className='min-h-full'
+            >
+              <div className='flex h-full flex-col'>{sidebar}</div>
+            </ResizablePanel>
+            <CustomResizeHandle />
+          </>
+        )}
+        <ResizablePanel minSize={30}>{children}</ResizablePanel>
       </ResizablePanelGroup>
     </div>
   )
