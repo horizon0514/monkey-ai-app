@@ -33,29 +33,18 @@ export default defineConfig({
         },
         output: {
           manualChunks(id) {
-            // Split vendor chunks for better caching
+            // Simplified chunking to avoid loading order issues
             if (id.includes('node_modules')) {
-              // React and related
-              if (id.includes('react') || id.includes('react-dom')) {
-                return 'react-vendor'
-              }
-              // Radix UI components
-              if (id.includes('@radix-ui')) {
-                return 'radix-vendor'
-              }
-              // AI SDK
-              if (id.includes('@ai-sdk') || id.includes('ai')) {
-                return 'ai-vendor'
-              }
-              // Animation libraries
+              // Put React in a separate chunk but ensure it loads first
               if (
-                id.includes('gsap') ||
-                id.includes('ogl') ||
-                id.includes('embla')
+                id.includes('react') ||
+                id.includes('react-dom') ||
+                id.includes('@ai-sdk') ||
+                id.includes('ai')
               ) {
-                return 'animation-vendor'
+                return 'react-core'
               }
-              // Other node_modules
+              // Everything else in vendor
               return 'vendor'
             }
             return undefined

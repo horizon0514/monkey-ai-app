@@ -1,22 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Renderer, Program, Mesh, Sphere, Camera, Mat3, Mat4 } from 'ogl'
 
-interface OrbProps {
-  hue?: number
-  hoverIntensity?: number
-  rotateOnHover?: boolean
-  forceHoverState?: boolean
-}
-
-export default function Orb({
-  hue = 0,
-  hoverIntensity = 0.2,
-  rotateOnHover = true,
-  forceHoverState = false
-}: OrbProps) {
-  const ctnDom = useRef<HTMLDivElement>(null)
-
-  const vert = /* glsl */ `
+const vert = /* glsl */ `
     precision highp float;
     attribute vec3 position;
     attribute vec3 normal;
@@ -45,7 +30,7 @@ export default function Orb({
     }
   `
 
-  const frag = /* glsl */ `
+const frag = /* glsl */ `
     precision highp float;
 
     uniform float uTime;
@@ -225,6 +210,21 @@ export default function Orb({
       gl_FragColor = vec4(finalColor, 1.0);
     }
   `
+
+interface OrbProps {
+  hue?: number
+  hoverIntensity?: number
+  rotateOnHover?: boolean
+  forceHoverState?: boolean
+}
+
+export default function Orb({
+  hue = 0,
+  hoverIntensity = 0.2,
+  rotateOnHover = true,
+  forceHoverState = false
+}: OrbProps) {
+  const ctnDom = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const container = ctnDom.current
