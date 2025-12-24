@@ -1,7 +1,7 @@
 import { Layout } from '@renderer/components/Layout'
 import { Sidebar } from '@renderer/components/Sidebar'
 import { MainContent } from '@renderer/components/MainContent'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { defaultSites } from '../../shared/defaultSites'
 import { SiteConfig } from '../../shared/types'
 import { Topbar } from './components/Topbar'
@@ -10,8 +10,13 @@ import { SettingsModal } from './components/SettingsWindow'
 function App() {
   const [sites, setSites] = useState<SiteConfig[]>(defaultSites)
   const [selectedTab, setSelectedTab] = useState<'chat' | string>('chat')
-  const [, setIsSidebarCollapsed] = useState(false)
+  const [, setIsSidebarCollapsedFromLayout] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+
+  // 同步侧边栏折叠状态
+  const handleSidebarCollapsedChange = useCallback((collapsed: boolean) => {
+    setIsSidebarCollapsedFromLayout(collapsed)
+  }, [])
 
   useEffect(() => {
     // 初始化时从主进程获取当前激活的 tab
@@ -107,7 +112,7 @@ function App() {
           />
         )
       }
-      onSidebarCollapsedChange={setIsSidebarCollapsed}
+      onSidebarCollapsedChange={handleSidebarCollapsedChange}
     >
       {showSettings ? (
         <SettingsModal

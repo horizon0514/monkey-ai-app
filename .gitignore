@@ -6,3 +6,6 @@ out
 .vscode
 
 dev-db
+
+# Auto Claude data directory
+.auto-claude/

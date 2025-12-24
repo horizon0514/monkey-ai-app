@@ -26,7 +26,7 @@ export const Titlebar: React.FC<TitlebarProps> = ({
   return (
     <div
       className={cn(
-        'flex h-12 items-center border-b border-border/40 bg-muted backdrop-blur supports-[backdrop-filter]:bg-muted/60',
+        'bg-sidebar supports-[backdrop-filter]:bg-sidebar/60 flex h-12 items-center border-b border-border/40 backdrop-blur',
         isMacOS && !isSidebarCollapsed && 'justify-start',
         isSidebarCollapsed ? 'w-auto px-2' : 'w-full'
       )}

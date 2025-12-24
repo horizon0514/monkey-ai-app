@@ -6,9 +6,10 @@ import {
 } from '@renderer/components/ui/resizable'
 import { Titlebar } from '../Titlebar'
 
-const MIN_SIDEBAR_WIDTH = 200 // 最小宽度（像素）
+const MIN_SIDEBAR_WIDTH = 60 // 最小宽度（像素）- 图标模式
 const MAX_SIDEBAR_WIDTH = 400 // 最大宽度（像素）
 const DEFAULT_SIDEBAR_WIDTH = 240 // 默认宽度（像素）
+const COLLAPSED_SIDEBAR_WIDTH = 60 // 折叠后宽度（像素）
 
 // 自定义 ResizableHandle 组件 - 优化后的版本
 const CustomResizeHandle = () => {
@@ -49,11 +50,9 @@ export const Layout: React.FC<LayoutProps> = ({
     pixelToPercentage(DEFAULT_SIDEBAR_WIDTH)
   )
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const [initialStoredWidth, setInitialStoredWidth] = useState<number | null>(
-    null
-  )
   const lastUpdateTime = useRef(0)
   const pendingUpdate = useRef<number | null>(null)
+  const initialized = useRef(false)
 
   // 使用节流发送更新
   const sendUpdate = useCallback((width: number, isCollapsed: boolean) => {
@@ -82,13 +81,20 @@ export const Layout: React.FC<LayoutProps> = ({
   // 处理侧边栏大小变化
   const handleSidebarResize = useCallback(
     (sizes: number[]) => {
-      if (!isSidebarCollapsed && sizes[0] > 0) {
+      if (sizes[0] > 0) {
+        // 如果正在折叠，不更新状态（防止从展开拖到折叠）
+        if (
+          isSidebarCollapsed &&
+          sizes[0] <= pixelToPercentage(COLLAPSED_SIDEBAR_WIDTH) * 1.5
+        ) {
+          return
+        }
         setSidebarSize(sizes[0])
 
         // 计算实际像素宽度并确保在边界内
         const sidebarWidth = Math.floor((window.innerWidth * sizes[0]) / 100)
         const boundedWidth = Math.max(
-          MIN_SIDEBAR_WIDTH,
+          isSidebarCollapsed ? COLLAPSED_SIDEBAR_WIDTH : MIN_SIDEBAR_WIDTH,
           Math.min(sidebarWidth, MAX_SIDEBAR_WIDTH)
         )
 
@@ -96,7 +102,7 @@ export const Layout: React.FC<LayoutProps> = ({
         sendUpdate(boundedWidth, isSidebarCollapsed)
       }
     },
-    [isSidebarCollapsed, sendUpdate]
+    [isSidebarCollapsed, sendUpdate, pixelToPercentage]
   )
 
   // 清理 RAF
@@ -111,33 +117,29 @@ export const Layout: React.FC<LayoutProps> = ({
   // 初始化时从主进程获取存储的侧边栏宽度
   useEffect(() => {
     const initializeSidebarWidth = async () => {
+      if (initialized.current) return
+      initialized.current = true
+
       try {
         const stored = await window.electron.getSidebarWidth()
         if (stored.collapsed) {
           setIsSidebarCollapsed(true)
-          setInitialStoredWidth(0)
         } else {
           // 使用存储的宽度，确保在边界范围内
           const boundedWidth = Math.max(
             MIN_SIDEBAR_WIDTH,
-            Math.min(stored.width, MAX_SIDEBAR_WIDTH)
+            Math.min(stored.width || DEFAULT_SIDEBAR_WIDTH, MAX_SIDEBAR_WIDTH)
           )
-          // 只在首次加载时设置初始存储宽度
-          if (initialStoredWidth === null) {
-            setInitialStoredWidth(boundedWidth)
-            setSidebarSize(pixelToPercentage(boundedWidth))
-          }
+          setSidebarSize(pixelToPercentage(boundedWidth))
           setIsSidebarCollapsed(false)
         }
       } catch {
         // 如果获取失败，使用默认值
-        if (initialStoredWidth === null) {
-          setInitialStoredWidth(DEFAULT_SIDEBAR_WIDTH)
-        }
+        setSidebarSize(pixelToPercentage(DEFAULT_SIDEBAR_WIDTH))
       }
     }
     initializeSidebarWidth()
-  }, [pixelToPercentage, initialStoredWidth])
+  }, [pixelToPercentage])
 
   // 监听来自主进程的宽度更新（例如在其他窗口中调整后）
   useEffect(() => {
@@ -145,13 +147,15 @@ export const Layout: React.FC<LayoutProps> = ({
       window.electron
         .getSidebarWidth()
         .then(stored => {
-          if (!stored.collapsed && stored.width > 0) {
-            const boundedWidth = Math.max(
-              MIN_SIDEBAR_WIDTH,
-              Math.min(stored.width, MAX_SIDEBAR_WIDTH)
-            )
-            setSidebarSize(pixelToPercentage(boundedWidth))
+          // 如果侧边栏折叠，不需要更新 sidebarSize
+          if (stored.collapsed) {
+            return
           }
+          const boundedWidth = Math.max(
+            MIN_SIDEBAR_WIDTH,
+            Math.min(stored.width || DEFAULT_SIDEBAR_WIDTH, MAX_SIDEBAR_WIDTH)
+          )
+          setSidebarSize(pixelToPercentage(boundedWidth))
         })
         .catch(() => {})
     }
@@ -172,12 +176,12 @@ export const Layout: React.FC<LayoutProps> = ({
 
     // 发送更新到主进程
     if (willCollapse) {
-      sendUpdate(0, true)
+      sendUpdate(COLLAPSED_SIDEBAR_WIDTH, false)
     } else {
       // 恢复到上次保存的宽度
       const sidebarWidthPx = Math.floor((window.innerWidth * sidebarSize) / 100)
       const boundedWidth = Math.max(
-        MIN_SIDEBAR_WIDTH,
+        COLLAPSED_SIDEBAR_WIDTH,
         Math.min(sidebarWidthPx, MAX_SIDEBAR_WIDTH)
       )
       sendUpdate(boundedWidth, false)
@@ -194,9 +198,9 @@ export const Layout: React.FC<LayoutProps> = ({
     (window.innerWidth * (isSidebarCollapsed ? 0 : sidebarSize)) / 100
   )
 
-  // 使用 key 强制在折叠状态改变或初始加载完成时重新挂载 Panel
+  // 使用 key 强制在折叠状态改变时重新挂载 Panel
   // 这样 defaultSize 会重新应用，解决拖动后折叠再展开的错位问题
-  const panelGroupKey = `${isSidebarCollapsed ? 'collapsed' : 'expanded'}-${initialStoredWidth ?? 'loading'}`
+  const panelGroupKey = isSidebarCollapsed ? 'collapsed' : 'expanded'
 
   return (
     <div className='flex h-screen flex-col bg-muted'>
@@ -235,19 +239,29 @@ export const Layout: React.FC<LayoutProps> = ({
         className='flex-1 [&>div[role=separator]]:bg-transparent [&>div[role=separator]]:will-change-transform'
         onLayout={handleSidebarResize}
       >
-        {!isSidebarCollapsed && (
-          <>
-            <ResizablePanel
-              defaultSize={sidebarSize}
-              minSize={pixelToPercentage(MIN_SIDEBAR_WIDTH)}
-              maxSize={pixelToPercentage(MAX_SIDEBAR_WIDTH)}
-              className='min-h-full'
-            >
-              <div className='flex h-full flex-col'>{sidebar}</div>
-            </ResizablePanel>
-            <CustomResizeHandle />
-          </>
-        )}
+        <ResizablePanel
+          defaultSize={
+            isSidebarCollapsed
+              ? pixelToPercentage(COLLAPSED_SIDEBAR_WIDTH)
+              : sidebarSize
+          }
+          minSize={
+            isSidebarCollapsed
+              ? pixelToPercentage(COLLAPSED_SIDEBAR_WIDTH)
+              : pixelToPercentage(MIN_SIDEBAR_WIDTH)
+          }
+          maxSize={pixelToPercentage(MAX_SIDEBAR_WIDTH)}
+          className='min-h-full'
+        >
+          <div className='flex h-full flex-col'>
+            {sidebar && React.isValidElement(sidebar)
+              ? React.cloneElement(sidebar as React.ReactElement<any>, {
+                  isCollapsed: isSidebarCollapsed
+                })
+              : sidebar}
+          </div>
+        </ResizablePanel>
+        {!isSidebarCollapsed && <CustomResizeHandle />}
         <ResizablePanel
           minSize={30}
           className='relative'

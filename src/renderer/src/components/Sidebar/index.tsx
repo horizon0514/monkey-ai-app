@@ -3,6 +3,7 @@ import { Button } from '@renderer/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@renderer/components/ui/tabs'
 import { Bot, Settings, MessageCircle } from 'lucide-react'
 import * as LucideIcons from 'lucide-react'
+import { cn } from '@renderer/lib/utils'
 import { SiteConfig } from '../../../../shared/types'
 
 interface SidebarProps {
@@ -12,6 +13,7 @@ interface SidebarProps {
   value: string
   sites: SiteConfig[]
   onOpenSettings?: () => void
+  isCollapsed?: boolean
 }
 
 // 从 SiteConfig 的 icon 字段动态获取图标组件
@@ -34,7 +36,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onTabClick,
   value,
   sites,
-  onOpenSettings
+  onOpenSettings,
+  isCollapsed
 }) => {
   const items: Array<{ id: string; title: string; icon: IconComponent }> = [
     { id: 'chat', title: 'Chat', icon: MessageCircle as IconComponent },
@@ -57,13 +60,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }
 
   return (
-    <div className='flex h-full flex-col justify-between bg-muted drag-region'>
+    <div className='bg-sidebar flex h-full flex-col justify-between drag-region'>
       <div className='flex flex-col py-4'>
-        <div className='mb-2 px-2'>
-          <p className='px-2 text-sm text-muted-foreground'>
-            选择你想要使用的 AI 助手
-          </p>
-        </div>
+        {!isCollapsed && (
+          <div className='mb-2 px-2'>
+            <p className='text-sidebar-foreground/60 px-2 text-sm'>
+              选择 AI 助手
+            </p>
+          </div>
+        )}
         <Tabs
           value={currentValue}
           onValueChange={onTabChange}
@@ -78,15 +83,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   key={item.id}
                   value={item.id}
                   onClick={() => onTabClick?.(item.id)}
-                  className='group relative justify-start gap-3 px-4 py-2.5 text-sm font-medium transition-all no-drag hover:bg-muted/50 data-[state=active]:bg-primary/10 data-[state=active]:text-primary'
+                  className={cn(
+                    'group relative justify-center gap-3 px-3 py-2.5 text-sm font-medium transition-all no-drag',
+                    isCollapsed ? 'w-full' : 'w-auto',
+                    currentValue === item.id
+                      ? 'bg-sidebar-accent/80 text-sidebar-accent-foreground shadow-sm'
+                      : 'hover:bg-sidebar-accent/50 data-[state=active]:bg-sidebar-accent/80 data-[state=active]:text-sidebar-accent-foreground'
+                  )}
                 >
                   <Icon
-                    size={18}
-                    className='shrink-0 transition-transform group-hover:scale-110 group-data-[state=active]:text-primary'
+                    size={20}
+                    className={cn(
+                      'shrink-0 transition-all duration-200',
+                      currentValue === item.id
+                        ? 'text-sidebar-accent-foreground scale-110'
+                        : 'text-sidebar-foreground/60 group-hover:text-sidebar-foreground group-hover:scale-110'
+                    )}
                   />
-                  <span className='transition-colors group-hover:text-foreground/90'>
+                  {!isCollapsed && (
+                    <span
+                      className={cn(
+                        'transition-colors duration-200',
+                        currentValue === item.id
+                          ? 'text-sidebar-accent-foreground font-medium'
+                          : 'text-sidebar-foreground/80 group-hover:text-sidebar-foreground'
+                      )}
+                    >
+                      {item.title}
+                    </span>
+                  )}
+                  {/* 悬浮提示 */}
+                  <div className='absolute left-full z-50 ml-2 hidden rounded-md bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block'>
                     {item.title}
-                  </span>
+                  </div>
                 </TabsTrigger>
               )
             })}
@@ -96,14 +125,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className='app-region-no-drag p-2'>
         <Button
           variant='ghost'
-          className='app-region-no-drag flex w-full items-center justify-start gap-3 px-4 py-2.5 text-sm font-medium'
+          className={cn(
+            'app-region-no-drag flex items-center justify-center gap-3 px-3 py-2.5 text-sm font-medium transition-all',
+            isCollapsed ? 'w-full' : 'w-auto justify-start',
+            'hover:bg-sidebar-accent/50'
+          )}
           onClick={handleSettingsClick}
         >
           <Settings
-            size={18}
-            className='shrink-0'
+            size={20}
+            className='text-sidebar-foreground/60 group-hover:text-sidebar-foreground shrink-0 transition-all duration-200 group-hover:scale-110'
           />
-          设置
+          {!isCollapsed && (
+            <span className='text-sidebar-foreground/80 group-hover:text-sidebar-foreground transition-colors duration-200'>
+              设置
+            </span>
+          )}
         </Button>
       </div>
     </div>
